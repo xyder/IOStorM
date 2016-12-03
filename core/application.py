@@ -13,5 +13,3 @@ class Application(web.Application):
         ]
 
         super(Application, self).__init__(*args, handlers=handlers, **kwargs)
-
-        # todo: create tables here and for acccess in handlers, append db object to Application

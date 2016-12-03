@@ -1,3 +1,7 @@
+"""
+This module contains classes and methods for certificate creation and signing.
+"""
+
 import logging
 import os
 import random
@@ -146,6 +150,11 @@ class SSLEntity:
 
 
 def main():
+    # setting up for a trusted-peer setup for TLS
+    # - a local self-signed CA is used
+    # - server/clients use certificates signed with this CA
+    # - certificates that are not signed by this CA are rejected
+
     # create CA subject
     config = get_config('../../config.yml')
 

@@ -38,23 +38,26 @@ def create_server(config):
     :param config: the application config
     """
 
-    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ssl_context = ssl.create_default_context(
+        ssl.Purpose.CLIENT_AUTH,
+        cafile=config.certificates.get_cert_path('cert_authority', 'cert')
+    )
+
     # set the key and certificate used by the server
     ssl_context.load_cert_chain(
         config.certificates.get_cert_path('server', 'cert'),
         config.certificates.get_cert_path('server', 'key'),
     )
 
-    # set and enforce the certificate expected from the client
+    # enforce the certificate expected from the client
     ssl_context.verify_mode = ssl.CERT_REQUIRED
-    ssl_context.load_verify_locations(
-        config.certificates.get_cert_path('cert_authority', 'cert')
-    )
 
     return httpserver.HTTPServer(Application(), ssl_options=ssl_context)
 
 
 def create_database():
+    """ Sets up the database for use. """
+
     # TODO: implement database creation function
     pass
 
