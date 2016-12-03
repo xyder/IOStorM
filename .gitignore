@@ -1,2 +1,5 @@
-# ignore settings file
+# set all generic and preferred .gitignore rules in the global .gitignore file
+# this file should contain only project specific files
+
+# ignore root settings file
 /config.yml
