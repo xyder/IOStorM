@@ -1,0 +1,31 @@
+# - within strings values from this config can be referenced as a dictionary using:
+#   {_[key1][key2]}
+# these references will be replaced via str.format at runtime
+# - to have a value normalized as path, add the string 'path' in the key
+
+base_path: ''  # base path will be filled at runtime
+
+server:
+  host: 'iostorm.local'
+  port: 9000
+  name: '{_[server][host]}:{_[server][port]}'
+
+  app_name: 'IOStorM Server'
+  debug: true
+  testing: false
+
+web_sockets:
+  # set to 31536000 when entire site is https ready and not in testing
+  ws_sts_max_age: 86400
+  cors_origins:
+    - 127.0.0.1
+    - '{_[server][host]}'
+
+database:
+  schema: 'iostorm_server'
+  user: '<FILL IN>'
+  password: '<FILL IN>'
+  host: '<FILL IN>'
+  port: <FILL IN>
+
+certificates:
