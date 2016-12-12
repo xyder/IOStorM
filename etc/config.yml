@@ -28,4 +28,12 @@ database:
   host: '<FILL IN>'
   port: <FILL IN>
 
+  # set to 'false' if the database is on a different server to minimize database call count
+  stream_results: true
+  # the number of rows to be loaded in a 'batch' when querying the database
+  batch_size: 10000
+
 certificates:
+  certs_path: '{_[base_path]}/certificates'
+
+  certificates:
