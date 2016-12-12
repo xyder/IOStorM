@@ -10,10 +10,6 @@ class SocketHandler(websocket.WebSocketHandler):
     def app_config(self):
         return self.application.config
 
-    @property
-    def db(self):
-        return self.application.db
-
     def __init__(self, *args, **kwargs):
         super(SocketHandler, self).__init__(*args, **kwargs)
 

@@ -110,9 +110,13 @@ class DatabaseConfig(BaseConfig):
         self.user = ''
         self.password = ''
         self.host = ''
-        self.port = 0
+        self.port = 5432
+        self.stream_results = None
+        self.batch_size = 10000
 
         super(DatabaseConfig, self).__init__(key_path, config_dict)
+
+        self.host = self.host or 'localhost'
 
 
 class ServerConfig(BaseConfig):

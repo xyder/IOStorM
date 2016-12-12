@@ -1,75 +1,82 @@
-import logging
-import uuid
-
-import psycopg2.extras
+from functools import partial
+from sqlalchemy import create_engine
 
 from core.libs.config_controller import get_config
 
 
-def prepare_db_driver(connection):
-    """ Loads and registers db extensions. """
+BATCH_SIZE = get_config().database.batch_size
 
-    psycopg2.extras.register_uuid()
-    psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, connection)
-    psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, connection)
+
+def get_engine():
+    """ Retrieves the database engine.
+
+    :return: the database engine.
+    """
+
+    db_config = get_config().database
+
+    if getattr(get_engine, '_db_engine', None) is None:
+        engine = create_engine('postgresql://{user}:{password}@{host}:{port}/{database}'.format(
+            user=db_config.user,
+            password=db_config.password,
+            host=db_config.host,
+            port=db_config.port,
+            database=db_config.name
+        ))
+        engine = engine.execution_options(stream_results=True)
+        setattr(get_engine, '_db_engine', engine)
+
+    return getattr(get_engine, '_db_engine')
 
 
 def get_connection():
-    """ Creates a connection object to the database.
+    """ Retrieves a database connection.
 
-    :return: the connection object
+    :return: a db connection.
     """
 
-    config = get_config()
-
-    # try to load from cache
-    connection = getattr(get_connection, '_connection', None)
-
-    if connection is None or connection.closed:
-        # create the connection
-        connection = psycopg2.connect(
-            host=config.database.host,
-            database=config.database.name,
-            user=config.database.user,
-            port=config.database.port,
-            password=config.database.password
-        )
-
-        # failed to connect
-        if connection.closed:
-            logging.error('Could not connect to {db_name} with {user}'.format(
-                db_name='', user=''))
-            return
-
-        # load extensions
-        prepare_db_driver(connection)
-
-        # cache the connection object
-        setattr(get_connection, '_connection', connection)
-
-    return connection
+    return get_engine().connect()
 
 
-def get_cursor(connection=None, named=True, scrollable=None):
-    """ Creates a cursor on the given connection.
+class BatchedResult(object):
+    """ Class that enables batched iteration over a database result set. """
 
-    :param connection: the connection object used to create the cursor.
-    :param bool named: if set to True, the cursor will be named (server-side cursor)
-    :param bool scrollable: will only be considered if `named` == True.
-        if set to True, cursor will be scrollable bidirectionally.
-    :return: the created cursor
-    """
+    def __init__(self, cursor, converter=None, batch_size=BATCH_SIZE):
+        self.cursor = cursor
+        self.converter = partial(self._convert_to_instance, converter)
+        self.batch_size = batch_size
 
-    connection = connection or get_connection()
+    @staticmethod
+    def _convert_to_instance(converter, args):
+        """ Applies a conversion over a set of arguments using a given converter.
 
-    if named:
-        # using a named connection to create a server-side cursor for better memory performance
-        # the server-side cursor will exist for the duration of the transaction
-        return connection.cursor(
-            str(uuid.uuid4()),
-            cursor_factory=psycopg2.extras.RealDictCursor,
-            scrollable=scrollable)
+        :param converter: the converter function (constructor)
+        :param args: arguments for the converter function
+        :return:
+        """
 
-    return connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        return args if not converter else converter(*args)
 
+    @classmethod
+    def _generator_func(cls, cursor, converter, batch_size=BATCH_SIZE):
+        """ Batched generator function for the db result set.
 
+        :param cursor: a cursor over the database results.
+        :param converter: a function to convert rows to instances (constructor)
+        :param int batch_size: the size of the batch to be iterated on each pass.
+        :return: a generator for the results
+        """
+
+        while True:
+            # fetch the results
+            results = cursor.fetchmany(batch_size)
+
+            # generate the results and convert them to instances
+            yield from (converter(result) for result in results)
+
+            # finished the results set
+            if not results:
+                break
+
+    def __iter__(self):
+        return self._generator_func(cursor=self.cursor, converter=self.converter, batch_size=self.batch_size)
