@@ -1,0 +1,13 @@
+from sqlalchemy import Column, ForeignKey, Integer, Text
+
+from models.base import Base
+
+
+class UserSettings(Base):
+    __tablename__ = 'user_settings'
+
+    uid = Column('uid', Integer, primary_key=True, unique=True, nullable=False)
+    key = Column('key', Text)
+    value = Column('value', Text)
+    value_type = Column('value_type', Text)
+    user_id = Column('user_id', Integer, ForeignKey('users.uid', ondelete='CASCADE'))
