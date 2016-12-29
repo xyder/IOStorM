@@ -1,6 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, Text
 
-from models.base import Base
+from models import Base
 
 
 class UserSettings(Base):
@@ -10,4 +10,4 @@ class UserSettings(Base):
     key = Column('key', Text)
     value = Column('value', Text)
     value_type = Column('value_type', Text)
-    user_id = Column('user_id', Integer, ForeignKey('users.uid', ondelete='CASCADE'))
+    user_id = Column('user_id', Integer, ForeignKey('users.uid', ondelete='CASCADE'), nullable=False)
