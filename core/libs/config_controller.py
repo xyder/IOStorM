@@ -117,6 +117,13 @@ class DatabaseConfig(BaseConfig):
         super(DatabaseConfig, self).__init__(key_path, config_dict)
 
         self.host = self.host or 'localhost'
+        self.dsn = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
+            user=self.user,
+            password=self.password,
+            host=self.host,
+            port=self.port,
+            database=self.name
+        )
 
 
 class ServerConfig(BaseConfig):
