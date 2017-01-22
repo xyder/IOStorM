@@ -1,4 +1,5 @@
 import os
+from inspect import getargvalues, stack
 
 
 def to_string_hex(data):
@@ -24,3 +25,21 @@ def get_parent_directory(path, levels_count=1):
         return path
 
     return get_parent_directory(os.path.dirname(path), levels_count=levels_count - 1)
+
+
+def get_func_args():
+    """ Returns a dictonary with the arguments passed to the calling function.
+
+    :rtype dict
+    :return: a dictionary with arguments
+    """
+
+    # get calling function frame
+    calling_frame = stack()[1][0]
+
+    args = getargvalues(calling_frame)
+    keys = getattr(args, 'args', [])
+    values_dict = getattr(args, 'locals', {})
+
+    # build dictionary with the calling function args and values
+    return {k: values_dict[k] for k in keys}
