@@ -2,14 +2,15 @@ from functools import partial
 
 import sqlalchemy
 from tornado import concurrent, gen
-from tornado.ioloop import IOLoop
 
-from core.db_access_control.db_utils import execute_command, list_mapper
+from core.db_access_control.db_utils import execute_command, list_mapper, get_sync_result
 
 
 class DBEntity(object):
     __tablename__ = ''
     __table__ = None  # type: sqlalchemy.Table
+
+    get_sync_result = staticmethod(get_sync_result)
 
     def __init__(self, *args, **kwargs):
         del args  # ignore the args
@@ -69,17 +70,29 @@ class DBEntity(object):
         :return: a list of elements
         """
 
-        if condition is None:
-            raise Exception("Can't fetch item without a filter.")
-
         # build the sql command
-        command = sqlalchemy.select([cls]).where(condition)
+        command = sqlalchemy.select([cls])
+        if condition is not None:
+            command = command.where(condition)
 
         # build the row parser to convert to class instance
         row_parser = partial(list_mapper, converter=cls)
 
         result = yield execute_command(command=command, row_parser=row_parser)
         return result
+
+    @classmethod
+    def get_sync(cls, condition=None):
+        """ Retrieve a list of elements from the database using the given condition.
+        The results will be returned in sync.
+
+        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :param condition: the condition applied when selecting the elements
+
+        :rtype: concurrent.Future
+        :return: a list of elements
+        """
+        return cls.get_sync_result(cls.get, condition=condition)
 
     @classmethod
     def get_by_pk(cls, **kwargs):
@@ -91,14 +104,7 @@ class DBEntity(object):
         :return: an instance of this class or None
         """
 
-        result = cls.get(cls._build_pk_clause(**kwargs))  # type: concurrent.Future
-
-        # run the async function synchronously
-        instance = IOLoop.instance()
-        instance.run_sync(lambda: result)
-
-        # fetch the result
-        result = result.result()
+        result = cls.get_sync(cls._build_pk_clause(**kwargs))
 
         if not result:
             return None

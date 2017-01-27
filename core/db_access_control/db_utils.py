@@ -2,7 +2,7 @@ import momoko
 from psycopg2 import ProgrammingError
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import postgresql
-from tornado import gen
+from tornado import concurrent, gen
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
 
@@ -27,6 +27,28 @@ def get_engine(echo=False):
     engine.echo = echo
 
     return engine
+
+
+def get_sync_result(func, *args, **kwargs):
+    """ Return the results from an async function, synchronously.
+
+    :type func: collections.abc.Callable
+    :param func: the function to be called
+
+    :type args: list
+    :param args: the arguments to be passed to the function
+
+    :type kwargs: dict
+    :param kwargs: the keyword arguments to be passed to the function
+
+    :return: the result of the function call
+    """
+
+    ioloop = IOLoop.instance()
+    future = func(*args, **kwargs)  # type: concurrent.Future
+    ioloop.add_future(future, lambda _: ioloop.stop())
+    ioloop.start()
+    return future.result()
 
 
 @gen.coroutine
