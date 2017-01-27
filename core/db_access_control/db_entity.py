@@ -89,7 +89,7 @@ class DBEntity(object):
         :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
         :param condition: the condition applied when selecting the elements
 
-        :rtype: concurrent.Future
+        :rtype: list
         :return: a list of elements
         """
         return cls.get_sync_result(cls.get, condition=condition)
