@@ -1,42 +1,15 @@
 import sqlalchemy
-from psycopg2 import ProgrammingError
 from sqlalchemy.sql import ddl
 from tornado import gen
 from tornado.ioloop import IOLoop
 
-from core.db_access_control.db_utils import execute_command
+from core.db_access_control.db_utils import execute_command_wrapper
 from core.libs.config_controller import get_config
 
 
 class DBController(object):
 
-    @staticmethod
-    @gen.coroutine
-    def _exception_wrapper(exception_type=ProgrammingError, valid_condition=lambda s: True, **kwargs):
-        """ Wraps SQL command execution and consumes an exception which matches the type and the condition specified.
-
-        :param exception_type: the type of the exception to be consumed
-
-        :type valid_condition: collections.abc.Callable
-        :param valid_condition: the condition for the exception message
-
-        :type kwargs: dict
-        :param kwargs: keyword arguments that will be passed to the  SQL command
-
-        :rtype: list
-        :return: the result of the command execution
-        """
-
-        result = []
-        try:
-            result = yield execute_command(**kwargs)
-        except exception_type as e:
-            s = str(e.args[0]).strip()
-
-            if not valid_condition(s):
-                raise
-
-        return result
+    _exception_wrapper = staticmethod(execute_command_wrapper)
 
     @classmethod
     @gen.coroutine

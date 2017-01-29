@@ -1,5 +1,5 @@
+import inspect
 import os
-from inspect import getargvalues, stack
 
 
 def to_string_hex(data):
@@ -35,9 +35,14 @@ def get_func_args():
     """
 
     # get calling function frame
-    calling_frame = stack()[1][0]
+    calling_frame = inspect.stack()[1][0]
 
-    args = getargvalues(calling_frame)
+    try:
+        args = inspect.getargvalues(calling_frame)
+    finally:
+        # explicit cleanup to make sure reference cycles are broken
+        del calling_frame
+
     keys = getattr(args, 'args', [])
     values_dict = getattr(args, 'locals', {})
 

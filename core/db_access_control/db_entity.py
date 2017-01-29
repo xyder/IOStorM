@@ -1,9 +1,10 @@
 from functools import partial
 
 import sqlalchemy
-from tornado import concurrent, gen
+from tornado import concurrent
 
 from core.db_access_control.db_utils import execute_command, list_mapper, get_sync_result
+from core.libs.exceptions import IncorrectResultCount
 
 
 class DBEntity(object):
@@ -59,15 +60,17 @@ class DBEntity(object):
         return cls._build_clause(sqlalchemy.and_, cls.__table__.primary_key.columns, **kwargs)
 
     @classmethod
-    @gen.coroutine
-    def get(cls, condition=None):
+    def get(cls, condition=None, async=True):
         """ Retrieve a list of elements from the database using the given condition.
 
         :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
         :param condition: the condition applied when selecting the elements
 
-        :rtype: concurrent.Future
-        :return: a list of elements
+        :type async: bool
+        :param async: if True, retrieves the result asynchronously
+
+        :rtype: concurrent.Future|list
+        :return: a Future for the result or a list of elements
         """
 
         # build the sql command
@@ -78,40 +81,40 @@ class DBEntity(object):
         # build the row parser to convert to class instance
         row_parser = partial(list_mapper, converter=cls)
 
-        result = yield execute_command(command=command, row_parser=row_parser)
-        return result
+        if async:
+            return execute_command(command=command, row_parser=row_parser)  # type: concurrent.Future
+        else:
+            return cls.get_sync_result(func=execute_command, command=command, row_parser=row_parser)
 
     @classmethod
-    def get_sync(cls, condition=None):
-        """ Retrieve a list of elements from the database using the given condition.
-        The results will be returned in sync.
-
-        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
-        :param condition: the condition applied when selecting the elements
-
-        :rtype: list
-        :return: a list of elements
-        """
-        return cls.get_sync_result(cls.get, condition=condition)
-
-    @classmethod
-    def get_by_pk(cls, **kwargs):
+    def get_by_pk(cls, async=True, **kwargs):
         """ Retrieve an element by primary key(s).
+
+        :type async: bool
+        :param async: if True, retrieves the result asynchronously
 
         :type kwargs: dict
         :param kwargs: the primary key fields and their values
 
-        :return: an instance of this class or None
+        :return: if async is True, it will return a list of objects.
+        If async is False, it will return an object, or None
         """
 
-        result = cls.get_sync(cls._build_pk_clause(**kwargs))
+        result = cls.get(condition=cls._build_pk_clause(**kwargs), async=async)
 
+        # return async result
+        if async:
+            return result
+
+        # check if sync result is None
         if not result:
             return None
 
+        # check query did not return multiple values (in case of incorrect PK clause)
         if len(result) != 1:
-            raise Exception('get_by_pk returned more than 1 result.')
+            raise IncorrectResultCount(1)
 
+        # return the first and only element
         return result[0]
 
     def create(self):

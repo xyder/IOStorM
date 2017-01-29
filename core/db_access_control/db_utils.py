@@ -29,11 +29,14 @@ def get_engine(echo=False):
     return engine
 
 
-def get_sync_result(func, *args, **kwargs):
-    """ Return the results from an async function, synchronously.
+def get_sync_result(func=None, future=None, *args, **kwargs):
+    """ Return the results from an async function or a future, synchronously.
 
     :type func: collections.abc.Callable
     :param func: the function to be called
+
+    :type future: concurrent.Future
+    :param future: a future which, if specified, will be used instead of `func` and all other arguments will be ignored
 
     :type args: list
     :param args: the arguments to be passed to the function
@@ -44,10 +47,14 @@ def get_sync_result(func, *args, **kwargs):
     :return: the result of the function call
     """
 
+    if not func and not future:
+        raise Exception('Either a function or a future must be specified.')
+
     ioloop = IOLoop.instance()
-    future = func(*args, **kwargs)  # type: concurrent.Future
+    future = future or func(*args, **kwargs)  # type: concurrent.Future
     ioloop.add_future(future, lambda _: ioloop.stop())
     ioloop.start()
+
     return future.result()
 
 
@@ -134,6 +141,61 @@ def list_mapper(values, columns, converter=lambda **kwargs: kwargs):
 
 
 @gen.coroutine
+def exception_wrapper(function, exception_type=ProgrammingError, message_validator=lambda s: True, **kwargs):
+    """ Wraps a function execution and consumes an exception which matches the type and the condition specified.
+
+    :param function: the function to call
+
+    :param exception_type: the type of the exception to be consumed
+
+    :type message_validator: collections.abc.Callable
+    :param message_validator: the condition for the exception message for which the exception is ignored
+
+    :type kwargs: dict
+    :param kwargs: keyword arguments that will be passed to the function
+
+    :rtype: list
+    :return: the result of the command execution
+    """
+
+    result = []
+    try:
+        result = yield function(**kwargs)
+    except exception_type as e:
+        s = str(e.args[0]).strip()
+
+        if not message_validator(s):
+            raise
+
+    return result
+
+
+@gen.coroutine
+def execute_command_wrapper(exception_type=ProgrammingError, message_validator=lambda s: True, **kwargs):
+    """ Wraps a SQL query execution and consumes an exception which matches the type and condition specified.
+
+    :param exception_type: the type of the exception to be consumed
+
+    :type message_validator: collections.abc.Callable
+    :param message_validator: the validator for the exception message
+
+    :type kwargs: dict
+    :param kwargs: keyword arguments that will be passed to the command executing function
+
+    :rtype: list
+    :return: the result set of the command execution
+    """
+
+    result = yield exception_wrapper(
+        function=execute_command,
+        exception_type=exception_type,
+        message_validator=message_validator,
+        **kwargs
+    )
+    return result
+
+
+@gen.coroutine
 def execute_command(command, io_loop=None, row_parser=list_mapper, parser_kwargs=None):
     """ Executes a database command asynchronously.
 
@@ -168,16 +230,15 @@ def execute_command(command, io_loop=None, row_parser=list_mapper, parser_kwargs
     cursor = yield conn.execute(command)
 
     while True:
-
         # call fetchmany asynchronously
-        try:
-            results = yield gen.Task(lambda callback: callback(cursor.fetchmany(db_config.batch_size)))
-        except ProgrammingError as p:
-            s = str(p.args[0]).strip()
+        results = yield exception_wrapper(
+            function=gen.Task,
+            message_validator=lambda s: s == 'no results to fetch',
+            func=lambda callback: callback(cursor.fetchmany(db_config.batch_size))
+        )
 
-            if not s == 'no results to fetch':
-                raise
-
+        # exit the loop if no more results where found
+        if not results:
             break
 
         for result in results:
@@ -195,9 +256,5 @@ def execute_command(command, io_loop=None, row_parser=list_mapper, parser_kwargs
 
             # store the return value
             ret_values.append(ret_value)
-
-        # exit the loop if no more results were found
-        if not results:
-            break
 
     return ret_values
