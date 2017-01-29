@@ -4,7 +4,7 @@ import sqlalchemy
 from tornado import concurrent
 
 from core.db_access_control.db_utils import execute_command, list_mapper, get_sync_result
-from core.libs.exceptions import IncorrectResultCount
+from core.libs.exceptions import IncorrectResultSizeException
 
 
 class DBEntity(object):
@@ -112,7 +112,7 @@ class DBEntity(object):
 
         # check query did not return multiple values (in case of incorrect PK clause)
         if len(result) != 1:
-            raise IncorrectResultCount(1)
+            raise IncorrectResultSizeException(1)
 
         # return the first and only element
         return result[0]

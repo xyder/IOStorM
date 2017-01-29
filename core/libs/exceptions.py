@@ -1,15 +1,12 @@
+import logging
 
 
-class DBAccessException(Exception):
-    """ Generic DB Access Exception """
-    pass
-
-
-class IncorrectResultCount(DBAccessException):
+class IncorrectResultSizeException(Exception):
     """ Raised to signal an incorrect number of items in a result set. """
 
     def __init__(self, *args):
-        self.args = args
+        super(IncorrectResultSizeException, self).__init__(*args)
+
         if len(args) != 1:
             return
 
@@ -19,3 +16,27 @@ class IncorrectResultCount(DBAccessException):
             return
 
         self.args = ('Result set does not contain exactly {} result(s).'.format(count),)
+
+
+class CertificateNotGeneratedException(Exception):
+    """ Raised to signal a certificate was not previously generated. """
+
+    def __init__(self, *args):
+        super(CertificateNotGeneratedException, self).__init__(*args)
+
+        if len(args) != 1:
+            return
+
+        self.args = ('{} certificate is not generated.'.format(args[0]),)
+
+
+class MissingArgsException(Exception):
+    """ Raised when a function arguments are missing or not specified. """
+
+    def __init__(self, *args):
+        super(MissingArgsException, self).__init__(*args)
+
+        if len(args) != 1:
+            return
+
+        self.args = ('Missing function arguments: {}'.format(args[0]),)

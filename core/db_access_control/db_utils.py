@@ -7,6 +7,7 @@ from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
 
 from core.libs.config_controller import get_config
+from core.libs.exceptions import MissingArgsException
 
 BATCH_SIZE = get_config().database.batch_size
 
@@ -48,7 +49,7 @@ def get_sync_result(func=None, future=None, *args, **kwargs):
     """
 
     if not func and not future:
-        raise Exception('Either a function or a future must be specified.')
+        raise MissingArgsException('Callable or Future')
 
     ioloop = IOLoop.instance()
     future = future or func(*args, **kwargs)  # type: concurrent.Future

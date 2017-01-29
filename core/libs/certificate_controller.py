@@ -9,6 +9,7 @@ import random
 from OpenSSL import crypto
 
 from core.libs.config_controller import get_config
+from core.libs.exceptions import CertificateNotGeneratedException
 
 
 class SSLEntity:
@@ -61,8 +62,9 @@ class SSLEntity:
         # set the issuer and sign the certificate
         if issuer:
             if not issuer.certificate:
-                logging.error('CA certificate is not generated.')
-                raise Exception('CA certificate is not generated.')
+                exception = CertificateNotGeneratedException()
+                logging.error(exception.args[0])
+                raise exception
 
             self.certificate.set_issuer(issuer.certificate.get_subject())
             self.certificate.sign(issuer.key, digest=self.sign_digest)
