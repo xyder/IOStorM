@@ -62,7 +62,7 @@ class SSLEntity:
         # set the issuer and sign the certificate
         if issuer:
             if not issuer.certificate:
-                exception = CertificateNotGeneratedException()
+                exception = CertificateNotGeneratedException('CA')
                 logging.error(exception.args[0])
                 raise exception
 

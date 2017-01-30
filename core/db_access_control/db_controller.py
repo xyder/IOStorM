@@ -18,7 +18,7 @@ class DBController(object):
 
         config = get_config()
         yield cls._exception_wrapper(
-            valid_condition=lambda s: s.startswith('schema ') and s.endswith(' already exists'),
+            message_validator=lambda s: s.startswith('schema ') and s.endswith(' already exists'),
             command=ddl.CreateSchema(config.database.schema)
         )
 
@@ -33,7 +33,7 @@ class DBController(object):
 
         config = get_config()
         yield cls._exception_wrapper(
-            valid_condition=lambda s: s.startswith('schema ') and s.endswith(' does not exist'),
+            message_validator=lambda s: s.startswith('schema ') and s.endswith(' does not exist'),
             command=ddl.DropSchema(config.database.schema, cascade=cascade)
         )
 

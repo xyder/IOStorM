@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, Text
+from sqlalchemy import Column, Text
+from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from core.db_access_control import DBEntity
@@ -9,7 +11,9 @@ from models import Base
 class User(DBEntity, Base):
     __tablename__ = 'users'
 
-    uid = Column('uid', Integer, primary_key=True, unique=True, nullable=False)
+    uid = Column(
+        'uid', UUID, server_default=text('extensions.uuid_generate_v4()'),
+        primary_key=True, unique=True, nullable=False)
 
     user_name = Column('user_name', Text, unique=True, nullable=False)
     full_name = Column('full_name', Text)

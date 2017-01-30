@@ -111,14 +111,38 @@ class DBEntity(object):
             return None
 
         # check query did not return multiple values (in case of incorrect PK clause)
-        if len(result) != 1:
-            raise IncorrectResultSizeException(1)
+        expected_result_size = 1
+        if len(result) != expected_result_size:
+            raise IncorrectResultSizeException(len(result), expected_result_size)
 
         # return the first and only element
         return result[0]
 
-    def create(self):
-        pass
+    @classmethod
+    def create(cls, returning=(), async=True, **kwargs):
+        """ Performs an insert with the given values.
+
+        :type returning: tuple|list
+        :param returning: the columns which will be returned after the insert is performed
+
+        :type async: bool
+        :param async: if True, performs the action asynchronously
+
+        :type kwargs: dict
+        :param kwargs: values which will be used to populate the element to be inserted
+
+        :return: the value of the column(s) specified in the `returning` field
+        """
+
+        command = cls.__table__.insert().values(**kwargs)
+
+        returning = returning if len(returning) else cls.__table__.primary_key.columns
+        command = command.returning(*returning)
+
+        if async:
+            return execute_command(command=command)
+        else:
+            return cls.get_sync_result(func=execute_command, command=command)
 
     def update(self):
         pass

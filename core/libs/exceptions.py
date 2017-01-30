@@ -4,30 +4,25 @@ import logging
 class IncorrectResultSizeException(Exception):
     """ Raised to signal an incorrect number of items in a result set. """
 
-    def __init__(self, *args):
-        super(IncorrectResultSizeException, self).__init__(*args)
+    def __init__(self, received, expected):
+        """
+        :type received: int
+        :param received: the actual size of the result
 
-        if len(args) != 1:
-            return
+        :type expected: int
+        :param expected: the expected size of the result
+        """
 
-        try:
-            count = int(args[0])
-        except ValueError:
-            return
-
-        self.args = ('Result set does not contain exactly {} result(s).'.format(count),)
+        self.args = ('Result set does not contain exactly {} result(s). Received {} items.'.format(expected, received),)
+        super(IncorrectResultSizeException, self).__init__(*self.args)
 
 
 class CertificateNotGeneratedException(Exception):
     """ Raised to signal a certificate was not previously generated. """
 
-    def __init__(self, *args):
-        super(CertificateNotGeneratedException, self).__init__(*args)
-
-        if len(args) != 1:
-            return
-
-        self.args = ('{} certificate is not generated.'.format(args[0]),)
+    def __init__(self, certificate_name):
+        self.args = ('{} certificate is not generated.'.format(certificate_name),)
+        super(CertificateNotGeneratedException, self).__init__(*self.args)
 
 
 class MissingArgsException(Exception):
