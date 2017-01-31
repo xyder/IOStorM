@@ -113,6 +113,7 @@ class DatabaseConfig(BaseConfig):
         self.port = 5432
         self.stream_results = None
         self.batch_size = 10000
+        self.debug_sql = False
 
         super(DatabaseConfig, self).__init__(key_path, config_dict)
 

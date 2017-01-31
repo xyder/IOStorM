@@ -1,3 +1,5 @@
+import logging
+
 import momoko
 from psycopg2 import ProgrammingError
 from sqlalchemy import create_engine
@@ -226,6 +228,9 @@ def execute_command(command, io_loop=None, row_parser=list_mapper, parser_kwargs
     # compile the command if necessary
     if not isinstance(command, str):
         command = get_compiled_command(command)
+
+    if db_config.debug_sql:
+        logging.info('Running SQL:\n {}'.format(str(command).strip()))
 
     # execute the command
     cursor = yield conn.execute(command)

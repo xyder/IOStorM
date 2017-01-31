@@ -26,6 +26,8 @@ class DBEntity(object):
 
             setattr(self, key, kwargs[key])
 
+        self.columns = self.__table__.c
+
     @staticmethod
     def _build_clause(comparator, columns, **kwargs):
         """ Builds a clause separated by the given comparator.
@@ -87,6 +89,23 @@ class DBEntity(object):
             return cls.get_sync_result(func=execute_command, command=command, row_parser=row_parser)
 
     @classmethod
+    def get_first(cls, condition=None):
+        """ Retrieves sync the first element returned by a select with the specified condition, or None.
+
+        :rtype: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :param condition: the condition for the select
+
+        :return: an instance of this class
+        """
+
+        result = cls.get(condition=condition, async=False)
+
+        if not result:
+            return None
+
+        return result[0]
+
+    @classmethod
     def get_by_pk(cls, async=True, **kwargs):
         """ Retrieve an element by primary key(s).
 
@@ -136,6 +155,7 @@ class DBEntity(object):
 
         command = cls.__table__.insert().values(**kwargs)
 
+        # if no `returning` columns are specified, add the primary key columns
         returning = returning if len(returning) else cls.__table__.primary_key.columns
         command = command.returning(*returning)
 

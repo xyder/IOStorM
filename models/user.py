@@ -12,8 +12,7 @@ class User(DBEntity, Base):
     __tablename__ = 'users'
 
     uid = Column(
-        'uid', UUID, server_default=text('extensions.uuid_generate_v4()'),
-        primary_key=True, unique=True, nullable=False)
+        'uid', UUID, server_default=text('extensions.uuid_generate_v4()'), primary_key=True)
 
     user_name = Column('user_name', Text, unique=True, nullable=False)
     full_name = Column('full_name', Text)
