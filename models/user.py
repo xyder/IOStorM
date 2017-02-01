@@ -14,7 +14,8 @@ class User(DBEntity, Base):
     uid = Column('uid', UUID, server_default=text('extensions.uuid_generate_v4()'), primary_key=True)
 
     user_name = Column('user_name', Text, unique=True, nullable=False)
-    full_name = Column('full_name', Text)
+    first_name = Column('first_name', Text)
+    last_name = Column('last_name', Text)
 
     key_hash = Column('key_hash', Text)
     settings = relationship('UserSettings', cascade='all, delete-orphan', backref='user')
@@ -24,7 +25,7 @@ class User(DBEntity, Base):
         # TODO: implement this
         return '<hash generator is not implemented yet>'
 
-    def __init__(self, user_name, uid=None, key=None, full_name='', key_hash=''):
+    def __init__(self, user_name, uid=None, key=None, first_name='', last_name='', key_hash=''):
         # fetch all arguments for this function
         kwargs = get_func_args()
         kwargs.pop('self')

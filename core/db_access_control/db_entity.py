@@ -26,7 +26,9 @@ class DBEntity(object):
 
             setattr(self, key, kwargs[key])
 
-        self.columns = self.__table__.c
+        self.columns = self.__table__.columns.items()
+        self.primary_keys = self.__table__.primary_key.columns.items()
+        self.non_pk_columns = [x for x in self.columns if x not in self.primary_keys]
 
     @staticmethod
     def _build_clause(comparator, columns, **kwargs):
@@ -163,6 +165,14 @@ class DBEntity(object):
             return execute_command(command=command)
         else:
             return cls.get_sync_result(func=execute_command, command=command)
+
+    def save(self):
+        """ Saves the instance to the database and fills in the generated values. """
+
+        # TODO: fill in based on custom subclass `returning` list for default/generated values
+        params = {c[0]: getattr(self, c[0], None) for c in self.non_pk_columns}
+        params = {k: v for k, v in params.items() if v is not None and v is not ''}
+        self.create(async=False, **params)
 
     def update(self):
         pass
