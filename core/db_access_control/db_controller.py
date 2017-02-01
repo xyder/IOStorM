@@ -46,7 +46,9 @@ class DBController(object):
         :param table: a SQLAlchemy Table specification used in the table creation
         """
 
-        yield cls._exception_wrapper(command=ddl.CreateTable(table))
+        yield cls._exception_wrapper(
+            message_validator=lambda s: s.startswith('relation ') and s.endswith(' already exists'),
+            command=ddl.CreateTable(table))
 
     @classmethod
     @gen.coroutine
@@ -73,7 +75,9 @@ class DBController(object):
         :param table: the table to be dropped
         """
 
-        yield cls._exception_wrapper(command=ddl.DropTable(table))
+        yield cls._exception_wrapper(
+            message_validator=lambda s: s.startswith('table ') and s.endswith(' does not exist'),
+            command=ddl.DropTable(table))
 
     @classmethod
     @gen.coroutine

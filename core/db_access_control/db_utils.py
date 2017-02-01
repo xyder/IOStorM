@@ -144,7 +144,7 @@ def list_mapper(values, columns, converter=lambda **kwargs: kwargs):
 
 
 @gen.coroutine
-def exception_wrapper(function, exception_type=ProgrammingError, message_validator=lambda s: True, **kwargs):
+def exception_wrapper(function, exception_type=ProgrammingError, message_validator=lambda s: False, **kwargs):
     """ Wraps a function execution and consumes an exception which matches the type and the condition specified.
 
     :param function: the function to call
@@ -174,7 +174,7 @@ def exception_wrapper(function, exception_type=ProgrammingError, message_validat
 
 
 @gen.coroutine
-def execute_command_wrapper(exception_type=ProgrammingError, message_validator=lambda s: True, **kwargs):
+def execute_command_wrapper(exception_type=ProgrammingError, message_validator=lambda s: False, **kwargs):
     """ Wraps a SQL query execution and consumes an exception which matches the type and condition specified.
 
     :param exception_type: the type of the exception to be consumed

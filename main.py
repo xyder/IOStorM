@@ -57,7 +57,7 @@ def create_server(config, enable_client_validation=True):
         config.certificates.get_cert_path('server', 'key'),
     )
 
-    return httpserver.HTTPServer(Application(), ssl_options=ssl_context)
+    return httpserver.HTTPServer(Application(debug=config.server.debug), ssl_options=ssl_context)
 
 
 def main():
