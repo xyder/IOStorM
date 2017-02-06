@@ -198,24 +198,63 @@ def execute_command_wrapper(exception_type=ProgrammingError, message_validator=l
     return result
 
 
-@gen.coroutine
-def execute_command(command, io_loop=None, row_parser=list_mapper, parser_kwargs=None):
-    """ Executes a database command asynchronously.
+def execute_command(command, io_loop=None, row_parser=list_mapper, parser_kwargs=None, async=True):
+    """ Execute an SQL command.
 
-    :param command: the SQL command or an SQLAlchemy object that is compilable
+    :param command: the SQL command string or an SQLAlchemy object that is compilable
 
     :type io_loop: IOLoop
     :param io_loop: the IO Loop to which the coroutines will be attached
 
     :type row_parser: collections.abc.Callable
     :param row_parser: a function that can receive the following args: values, columns, converter
-        (see list_mapper for an example)
+        (see `list_mapper` for an example)
+
+    :type parser_kwargs: dict
+    :param parser_kwargs: keyword arguments that will be passed to `row_parser` for each item
+
+    :type async: bool
+    :param async: determines if the command should by executed asynchronously
+
+    :rtype: list
+    :return: a list of results generated after running row_parser on each row
+    """
+
+    if async:
+        return execute_command_async(
+            command=command,
+            io_loop=io_loop,
+            row_parser=row_parser,
+            parser_kwargs=parser_kwargs
+        )
+    else:
+        return get_sync_result(
+            func=execute_command_async,
+            command=command,
+            io_loop=io_loop,
+            row_parser=row_parser,
+            parser_kwargs=parser_kwargs
+        )
+
+
+@gen.coroutine
+def execute_command_async(command, io_loop=None, row_parser=list_mapper, parser_kwargs=None):
+    """ Executes a database command asynchronously.
+
+    :param command: the SQL command string or an SQLAlchemy object that is compilable
+
+    :type io_loop: IOLoop
+    :param io_loop: the IO Loop to which the coroutines will be attached
+
+    :type row_parser: collections.abc.Callable
+    :param row_parser: a function that can receive the following args: values, columns, converter
+        (see `list_mapper` for an example)
 
     :type parser_kwargs: dict
     :param parser_kwargs: kwargs that will be passed to `row_parser` for each item
 
     :rtype: list
-    :return: a list of results generated (if any) after running row_parser on each row
+    :return: a list of results generated after running row_parser on each row
     """
 
     parser_kwargs = parser_kwargs or {}

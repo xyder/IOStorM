@@ -4,7 +4,7 @@ import sqlalchemy
 from tornado import concurrent
 
 from core.db_access_control.db_utils import execute_command, list_mapper, get_sync_result
-from core.libs.exceptions import IncorrectResultSizeException
+from core.libs.exceptions import IncorrectResultSizeException, PartialPrimaryKeyException, SaveEntityFailedException
 
 
 class DBEntity(object):
@@ -27,8 +27,8 @@ class DBEntity(object):
             setattr(self, key, kwargs[key])
 
         self.columns = self.__table__.columns.items()
-        self.primary_keys = self.__table__.primary_key.columns.items()
-        self.non_pk_columns = [x for x in self.columns if x not in self.primary_keys]
+        self.pk_columns = self.__table__.primary_key.columns.items()
+        self.non_pk_columns = [x for x in self.columns if x not in self.pk_columns]
 
     @staticmethod
     def _build_clause(comparator, columns, **kwargs):
@@ -60,8 +60,65 @@ class DBEntity(object):
         :return: the built clause
         """
 
+        expected = len(cls.__table__.primary_key.columns)
+        received = len(kwargs)
+        if expected != received:
+            raise PartialPrimaryKeyException(received=received, expected=expected)
+
         # join the conditions for the pk using AND operator
         return cls._build_clause(sqlalchemy.and_, cls.__table__.primary_key.columns, **kwargs)
+
+    @staticmethod
+    def columns_to_dict(obj, columns, filtered=True):
+        """ Retrives a dict of column names and their values.
+
+        :param obj: the object from where the params are extracted.
+
+        :type columns: list
+        :param columns: the column names used in building the result
+
+        :type filtered: bool
+        :param filtered: if True, then None and Empty objects will be removed from the result.
+
+        :rtype: dict
+        :return: a dict containing the column names and their values
+        """
+
+        # create dict with all columns
+        params = {c[0]: getattr(obj, c[0], None) for c in columns}
+
+        if not filtered:
+            return params
+
+        # filter out those which are None or Empty
+        return {k: v for k, v in params.items() if v not in (None, '')}
+
+    def get_all_fields(self):
+        """ Retrieves a dict of all column names and their values.
+
+        :rtype: dict
+        :return: a dict containing the column names and their types
+        """
+
+        return self.columns_to_dict(self, self.columns)
+
+    def get_non_pk_fields(self):
+        """ Retrieves a dict of non-primary key column names and their values.
+
+        :rtype: dict
+        :return: dict containing the column names and their values
+        """
+
+        return self.columns_to_dict(self, self.non_pk_columns)
+
+    def get_pk_fields(self):
+        """ Retrieves a dict of primary key column names and their values.
+
+        :rtype: dict
+        :return: dict containing the column names and their values
+        """
+
+        return self.columns_to_dict(self, self.pk_columns)
 
     @classmethod
     def get(cls, condition=None, async=True):
@@ -78,17 +135,14 @@ class DBEntity(object):
         """
 
         # build the sql command
-        command = sqlalchemy.select([cls])
+        command = cls.__table__.select()
         if condition is not None:
             command = command.where(condition)
 
         # build the row parser to convert to class instance
         row_parser = partial(list_mapper, converter=cls)
 
-        if async:
-            return execute_command(command=command, row_parser=row_parser)  # type: concurrent.Future
-        else:
-            return cls.get_sync_result(func=execute_command, command=command, row_parser=row_parser)
+        return execute_command(command=command, row_parser=row_parser, async=async)
 
     @classmethod
     def get_first(cls, condition=None):
@@ -161,26 +215,84 @@ class DBEntity(object):
         returning = returning if len(returning) else cls.__table__.primary_key.columns
         command = command.returning(*returning)
 
-        if async:
-            return execute_command(command=command)
-        else:
-            return cls.get_sync_result(func=execute_command, command=command)
+        return execute_command(command=command, async=async)
 
-    def save(self):
-        """ Saves the instance to the database and fills in the generated values. """
+    def save(self, async=True):
+        """ Saves the instance to the database and fills in the generated values.
+
+        :type async: bool
+        :param async: If True, will run the command asynchronously.
+        """
 
         # TODO: fill in based on custom subclass `returning` list for default/generated values
-        params = {c[0]: getattr(self, c[0], None) for c in self.non_pk_columns}
-        params = {k: v for k, v in params.items() if v is not None and v is not ''}
-        self.create(async=False, **params)
+        returned = self.create(async=async, **self.get_non_pk_fields())
+        if len(returned) != 1:
+            raise SaveEntityFailedException('Invalid number of pk fields used - {}.'.format(len(returned)))
 
-    def update(self):
-        pass
+        returned = returned[0]  # type: dict
+        for k, v in returned.items():
+            setattr(self, k, v)
 
-    def delete(self):
-        pass
+    @classmethod
+    def update_element(cls, condition=None, async=True, **kwargs):
+        """ Performs an update with the given args and condition.
+
+        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :param condition: the condition on which the update will be performed.
+
+        :type async: bool
+        :param async: if True, it will run the command asynchronously.
+
+        :type kwargs: dict
+        :param kwargs: args with values to be updated
+        """
+
+        command = cls.__table__.update().values(**kwargs)
+
+        if condition is not None:
+            command = command.where(condition)
+
+        execute_command(command=command, async=async)
+
+    def update(self, async=True):
+        """ Updates the database with the information from this instance.
+
+        :type async: bool
+        :param async: if True, it will perform the action asynchronously.
+        """
+
+        self.update_element(condition=self._build_pk_clause(**self.get_pk_fields()), async=async, **self.get_non_pk_fields())
+
+    @classmethod
+    def delete_element(cls, condition=None, async=True):
+        """ Performs a delete with the given condition.
+
+        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :param condition: the condition on which the delete will be performed
+
+        :type async: bool
+        :param async: if True, it will perform the action asynchronously
+        """
+
+        command = cls.__table__.delete()
+
+        if condition is not None:
+            command = command.where(condition)
+
+        execute_command(command=command, async=async)
+
+    def delete(self, async=True):
+        """ Deletes this instance from the database.
+
+        :type async: bool
+        :param async: if True, it will perform the action asynchronously.
+        """
+
+        self.delete_element(condition=self._build_pk_clause(**self.get_pk_fields()), async=async)
 
     def __repr__(self):
+        """ Returns the representation of this instance. """
+
         # sort the column keys
         sorted_columns = sorted(self.__table__.columns, key=lambda c: c.key)
 
@@ -190,3 +302,6 @@ class DBEntity(object):
         return '<{name}: {data}>'.format(
             name=self.__class__.__name__,
             data=', '.join('{} = {}'.format(k, v) for k, v in sorted_pairs))
+
+    # str of this object will return the same as repr
+    __str__ = __repr__

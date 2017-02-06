@@ -35,3 +35,21 @@ class MissingArgsException(Exception):
             return
 
         self.args = ('Missing function arguments: {}'.format(args[0]),)
+
+
+class PartialPrimaryKeyException(Exception):
+    """ Raised when more primary key values are expected than were provided. """
+
+    def __init__(self, received, expected):
+        self.args = ('Expected number of values for pk is {}, {} were provided.'.format(expected, received),)
+
+        super(PartialPrimaryKeyException, self).__init__(*self.args)
+
+
+class SaveEntityFailedException(Exception):
+    """ Called when the creation of an entity failed. """
+
+    def __init__(self, reason):
+        self.args = ('Entity creation failed. Reason: {}'.format(reason),)
+
+        super(SaveEntityFailedException, self).__init__(*self.args)
