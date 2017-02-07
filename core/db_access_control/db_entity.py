@@ -3,16 +3,16 @@ from functools import partial
 import sqlalchemy
 from tornado import concurrent
 
-from core.db_access_control.db_utils import execute_command, list_mapper, get_sync_result
+from core.db_access_control.db_connection import DBConnection
+from core.db_access_control.db_exceptions import IncorrectResultSizeException, SaveEntityFailedException
 from core.db_access_control.query_builder import QueryBuilder
-from core.libs.exceptions import IncorrectResultSizeException, SaveEntityFailedException
 
 
 class DBEntity(object):
     __tablename__ = ''
     __table__ = None  # type: sqlalchemy.Table
 
-    get_sync_result = staticmethod(get_sync_result)
+    get_sync_result = staticmethod(DBConnection.get_sync_result)
 
     def __init__(self, *args, **kwargs):
         del args  # ignore the args
@@ -30,6 +30,57 @@ class DBEntity(object):
         self.columns = self.__table__.columns.items()
         self.pk_columns = self.__table__.primary_key.columns.items()
         self.non_pk_columns = [x for x in self.columns if x not in self.pk_columns]
+
+    @classmethod
+    def create(cls, returning=(), async=True, **kwargs):
+        """ Performs an insert with the given values.
+
+        :type returning: tuple|list
+        :param returning: the columns which will be returned after the insert is performed
+
+        :type async: bool
+        :param async: if True, performs the action asynchronously
+
+        :type kwargs: dict
+        :param kwargs: values which will be used to populate the element to be inserted
+
+        :return: the value of the column(s) specified in the `returning` field
+        """
+
+        command = cls.__table__.insert().values(**kwargs)
+
+        # if no `returning` columns are specified, add the primary key columns
+        returning = returning if len(returning) else cls.__table__.primary_key.columns
+        command = command.returning(*returning)
+
+        return DBConnection.execute_command(command=command, async=async)
+
+    def delete(self, async=True):
+        """ Deletes this instance from the database.
+
+        :type async: bool
+        :param async: if True, it will perform the action asynchronously.
+        """
+
+        self.delete_element(condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()), async=async)
+
+    @classmethod
+    def delete_element(cls, condition=None, async=True):
+        """ Performs a delete with the given condition.
+
+        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :param condition: the condition on which the delete will be performed
+
+        :type async: bool
+        :param async: if True, it will perform the action asynchronously
+        """
+
+        command = cls.__table__.delete()
+
+        if condition is not None:
+            command = command.where(condition)
+
+        DBConnection.execute_command(command=command, async=async)
 
     def get_all_fields(self):
         """ Retrieves a dict of all column names and their values.
@@ -78,9 +129,9 @@ class DBEntity(object):
             command = command.where(condition)
 
         # build the row parser to convert to class instance
-        row_parser = partial(list_mapper, converter=cls)
+        row_parser = partial(QueryBuilder.list_mapper, converter=cls)
 
-        return execute_command(command=command, row_parser=row_parser, async=async)
+        return DBConnection.execute_command(command=command, row_parser=row_parser, async=async)
 
     @classmethod
     def get_first(cls, condition=None):
@@ -131,30 +182,6 @@ class DBEntity(object):
         # return the first and only element
         return result[0]
 
-    @classmethod
-    def create(cls, returning=(), async=True, **kwargs):
-        """ Performs an insert with the given values.
-
-        :type returning: tuple|list
-        :param returning: the columns which will be returned after the insert is performed
-
-        :type async: bool
-        :param async: if True, performs the action asynchronously
-
-        :type kwargs: dict
-        :param kwargs: values which will be used to populate the element to be inserted
-
-        :return: the value of the column(s) specified in the `returning` field
-        """
-
-        command = cls.__table__.insert().values(**kwargs)
-
-        # if no `returning` columns are specified, add the primary key columns
-        returning = returning if len(returning) else cls.__table__.primary_key.columns
-        command = command.returning(*returning)
-
-        return execute_command(command=command, async=async)
-
     def save(self, async=True):
         """ Saves the instance to the database and fills in the generated values.
 
@@ -170,6 +197,18 @@ class DBEntity(object):
         returned = returned[0]  # type: dict
         for k, v in returned.items():
             setattr(self, k, v)
+
+    def update(self, async=True):
+        """ Updates the database with the information from this instance.
+
+        :type async: bool
+        :param async: if True, it will perform the action asynchronously.
+        """
+
+        self.update_element(
+            condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()),
+            async=async, **self.get_non_pk_fields()
+        )
 
     @classmethod
     def update_element(cls, condition=None, async=True, **kwargs):
@@ -190,46 +229,7 @@ class DBEntity(object):
         if condition is not None:
             command = command.where(condition)
 
-        execute_command(command=command, async=async)
-
-    def update(self, async=True):
-        """ Updates the database with the information from this instance.
-
-        :type async: bool
-        :param async: if True, it will perform the action asynchronously.
-        """
-
-        self.update_element(
-            condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()),
-            async=async, **self.get_non_pk_fields()
-        )
-
-    @classmethod
-    def delete_element(cls, condition=None, async=True):
-        """ Performs a delete with the given condition.
-
-        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
-        :param condition: the condition on which the delete will be performed
-
-        :type async: bool
-        :param async: if True, it will perform the action asynchronously
-        """
-
-        command = cls.__table__.delete()
-
-        if condition is not None:
-            command = command.where(condition)
-
-        execute_command(command=command, async=async)
-
-    def delete(self, async=True):
-        """ Deletes this instance from the database.
-
-        :type async: bool
-        :param async: if True, it will perform the action asynchronously.
-        """
-
-        self.delete_element(condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()), async=async)
+        DBConnection.execute_command(command=command, async=async)
 
     def __repr__(self):
         """ Returns the representation of this instance. """

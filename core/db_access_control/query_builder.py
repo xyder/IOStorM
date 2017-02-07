@@ -1,6 +1,9 @@
 import sqlalchemy
+from sqlalchemy.dialects import postgresql
 
-from core.libs.exceptions import PartialPrimaryKeyException
+from core.db_access_control.db_exceptions import PartialPrimaryKeyException
+
+DIALECT = postgresql.dialect()
 
 
 class QueryBuilder(object):
@@ -70,3 +73,40 @@ class QueryBuilder(object):
 
         # join the conditions for the pk using AND operator
         return cls.build_clause(sqlalchemy.and_, table.primary_key.columns, **kwargs)
+
+    @staticmethod
+    def list_mapper(values, columns, converter=lambda **kwargs: kwargs):
+        """ A base row parser that maps the row values to the columns and passes them to an object constructor
+
+        :type values: list
+        :param values: the row values
+
+        :param columns: the columns (cursor.description)
+
+        :type converter: collections.abc.Callable
+        :param converter: an object instance constructor
+
+        :return: the resulting object instance
+        """
+
+        return converter(**{column[0]: values[index] for index, column in enumerate(columns)})
+
+    @staticmethod
+    def get_compiled_command(command, dialect=DIALECT):
+        """ Compiles a SQLAlchemy commmand and binds the command parameters.
+
+        :param command: the SQLAlchemy command
+        :param dialect: the SQL dialect that will be used for command compiling
+
+        :rtype: str
+        :return: the SQL command
+        """
+
+        try:
+            return str(command.compile(dialect=dialect, compile_kwargs={'literal_binds': True}))
+        except TypeError as t:
+            # suppress exception for literal_binds argument not being expected
+            if 'literal_binds' not in t.args[0]:
+                raise
+
+            return str(command)

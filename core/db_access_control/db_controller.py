@@ -3,13 +3,13 @@ from sqlalchemy.sql import ddl
 from tornado import gen
 from tornado.ioloop import IOLoop
 
-from core.db_access_control.db_utils import execute_command_wrapper
+from core.db_access_control.db_connection import DBConnection
 from core.libs.config_controller import get_config
 
 
 class DBController(object):
 
-    _exception_wrapper = staticmethod(execute_command_wrapper)
+    _exception_wrapper = staticmethod(DBConnection.execute_command_wrapper)
 
     @classmethod
     @gen.coroutine

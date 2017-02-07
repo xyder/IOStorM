@@ -213,4 +213,3 @@ def get_config(config_file=''):
         setattr(get_config, '_config', ApplicationConfig(config_file))
 
     return getattr(get_config, '_config')
-
