@@ -4,7 +4,8 @@ import sqlalchemy
 from tornado import concurrent
 
 from core.db_access_control.db_utils import execute_command, list_mapper, get_sync_result
-from core.libs.exceptions import IncorrectResultSizeException, PartialPrimaryKeyException, SaveEntityFailedException
+from core.db_access_control.query_builder import QueryBuilder
+from core.libs.exceptions import IncorrectResultSizeException, SaveEntityFailedException
 
 
 class DBEntity(object):
@@ -30,69 +31,6 @@ class DBEntity(object):
         self.pk_columns = self.__table__.primary_key.columns.items()
         self.non_pk_columns = [x for x in self.columns if x not in self.pk_columns]
 
-    @staticmethod
-    def _build_clause(comparator, columns, **kwargs):
-        """ Builds a clause separated by the given comparator.
-
-        :type comparator: collections.abc.Callable
-        :param comparator: the comparator function which will be used to join all the clauses
-
-        :type columns: sqlalchemy.sql.base.ColumnCollection
-        :param columns: the columns which will be compared
-
-        :type kwargs: dict
-        :param kwargs: the values associated with the column names which will be compared
-
-        :rtype: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
-        :return: the built clause
-        """
-
-        return comparator(*(column == kwargs[column.name] for column in columns))
-
-    @classmethod
-    def _build_pk_clause(cls, **kwargs):
-        """ Builds an AND clause with the pk fields and the values received as function arguments.
-
-        :type kwargs: dict
-        :param kwargs: the pk names and their desired values
-
-        :rtype: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
-        :return: the built clause
-        """
-
-        expected = len(cls.__table__.primary_key.columns)
-        received = len(kwargs)
-        if expected != received:
-            raise PartialPrimaryKeyException(received=received, expected=expected)
-
-        # join the conditions for the pk using AND operator
-        return cls._build_clause(sqlalchemy.and_, cls.__table__.primary_key.columns, **kwargs)
-
-    @staticmethod
-    def columns_to_dict(obj, columns, filtered=True):
-        """ Retrives a dict of column names and their values.
-
-        :param obj: the object from where the params are extracted.
-
-        :type columns: list
-        :param columns: the column names used in building the result
-
-        :type filtered: bool
-        :param filtered: if True, then None and Empty objects will be removed from the result.
-
-        :rtype: dict
-        :return: a dict containing the column names and their values
-        """
-
-        # create dict with all columns
-        params = {c[0]: getattr(obj, c[0], None) for c in columns}
-
-        if not filtered:
-            return params
-
-        # filter out those which are None or Empty
-        return {k: v for k, v in params.items() if v not in (None, '')}
-
     def get_all_fields(self):
         """ Retrieves a dict of all column names and their values.
 
@@ -100,7 +38,7 @@ class DBEntity(object):
         :return: a dict containing the column names and their types
         """
 
-        return self.columns_to_dict(self, self.columns)
+        return QueryBuilder.columns_to_dict(self, self.columns)
 
     def get_non_pk_fields(self):
         """ Retrieves a dict of non-primary key column names and their values.
@@ -109,7 +47,7 @@ class DBEntity(object):
         :return: dict containing the column names and their values
         """
 
-        return self.columns_to_dict(self, self.non_pk_columns)
+        return QueryBuilder.columns_to_dict(self, self.non_pk_columns)
 
     def get_pk_fields(self):
         """ Retrieves a dict of primary key column names and their values.
@@ -118,7 +56,7 @@ class DBEntity(object):
         :return: dict containing the column names and their values
         """
 
-        return self.columns_to_dict(self, self.pk_columns)
+        return QueryBuilder.columns_to_dict(self, self.pk_columns)
 
     @classmethod
     def get(cls, condition=None, async=True):
@@ -175,7 +113,7 @@ class DBEntity(object):
         If async is False, it will return an object, or None
         """
 
-        result = cls.get(condition=cls._build_pk_clause(**kwargs), async=async)
+        result = cls.get(condition=QueryBuilder.build_pk_clause(cls.__table__, **kwargs), async=async)
 
         # return async result
         if async:
@@ -261,7 +199,10 @@ class DBEntity(object):
         :param async: if True, it will perform the action asynchronously.
         """
 
-        self.update_element(condition=self._build_pk_clause(**self.get_pk_fields()), async=async, **self.get_non_pk_fields())
+        self.update_element(
+            condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()),
+            async=async, **self.get_non_pk_fields()
+        )
 
     @classmethod
     def delete_element(cls, condition=None, async=True):
@@ -288,7 +229,7 @@ class DBEntity(object):
         :param async: if True, it will perform the action asynchronously.
         """
 
-        self.delete_element(condition=self._build_pk_clause(**self.get_pk_fields()), async=async)
+        self.delete_element(condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()), async=async)
 
     def __repr__(self):
         """ Returns the representation of this instance. """
