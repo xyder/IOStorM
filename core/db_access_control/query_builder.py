@@ -25,7 +25,7 @@ class QueryBuilder(object):
         """
 
         # create dict with all columns
-        params = {c[0]: getattr(obj, c[0], None) for c in columns}
+        params = {c[0]: getattr(obj, c[0]) for c in columns}
 
         if not filtered:
             return params
