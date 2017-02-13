@@ -46,7 +46,7 @@ class QueryBuilder(object):
         :type kwargs: dict
         :param kwargs: the values associated with the column names which will be compared
 
-        :rtype: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :rtype: sqlalchemy.sql.elements.BooleanClauseList
         :return: the built clause
         """
 
@@ -62,7 +62,7 @@ class QueryBuilder(object):
         :type kwargs: dict
         :param kwargs: the pk names and their desired values
 
-        :rtype: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :rtype: sqlalchemy.sql.elements.BooleanClauseList
         :return: the built clause
         """
 
