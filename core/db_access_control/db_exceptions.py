@@ -19,10 +19,10 @@ class IncorrectResultSizeException(Exception):
 
 
 class PartialPrimaryKeyException(Exception):
-    """ Raised when more primary key values are expected than were provided. """
+    """ Raised when some of the primary keys from a multi-field primary key were not provided. """
 
-    def __init__(self, received, expected):
-        self.args = ('Expected number of values for pk is {}, {} were provided.'.format(expected, received),)
+    def __init__(self, missing_keys):
+        self.args = ('Missing primary key fields: {}'.format(', '.join(missing_keys)),)
 
         super(PartialPrimaryKeyException, self).__init__(*self.args)
 

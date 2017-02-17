@@ -1,10 +1,12 @@
 import unittest
 
+import mock
 import sqlalchemy
 import sqlalchemy.dialects
 import sqlalchemy.sql.elements
 
 import core.db_access_control.query_builder as qb
+import core.db_access_control.db_exceptions as db_exceptions
 
 
 class ColumnsToDictTestCase(unittest.TestCase):
@@ -45,16 +47,16 @@ class ColumnsToDictTestCase(unittest.TestCase):
         """ Test exception when a non-existent column is requested. """
 
         # customize test resources
-        test_columns = self.test_columns.copy()
-        test_columns.append(('test_attr_4', None))
+        self.test_columns.append(('test_attr_4', None))
 
         # run test
-        self.assertRaises(AttributeError, qb.QueryBuilder.columns_to_dict, self.test_object, test_columns)
+        self.assertRaises(AttributeError, qb.QueryBuilder.columns_to_dict, self.test_object, self.test_columns)
 
 
 class BuildClauseTestCase(unittest.TestCase):
     def test_happy_flow(self):
         """ Test successful flow. """
+
         # build test resources
         test_comparator = sqlalchemy.and_
         test_column_1 = sqlalchemy.Column('column_1')
@@ -67,18 +69,14 @@ class BuildClauseTestCase(unittest.TestCase):
             column_1=3,
             column_2='test_string'
         )
-
-        # compile results
-        compiled_result = result.compile(
-            dialect=sqlalchemy.dialects.postgresql.dialect(),
-            compile_kwargs={'literal_binds': True}
-        )
+        compiled_result = qb.QueryBuilder.get_compiled_command(result)
 
         self.assertEqual(type(result), sqlalchemy.sql.elements.BooleanClauseList)
         self.assertEqual(str(compiled_result), "column_1 = 3 AND column_2 = 'test_string'")
 
     def test_happy_flow_2(self):
         """ Test succesful flow. """
+
         # build test resources
         test_comparator = sqlalchemy.or_
         test_column_1 = sqlalchemy.Column('column_1')
@@ -93,12 +91,7 @@ class BuildClauseTestCase(unittest.TestCase):
             column_2='test_string',
             column_3=None
         )
-
-        # compile results
-        compiled_result = result.compile(
-            dialect=sqlalchemy.dialects.postgresql.dialect(),
-            compile_kwargs={'literal_binds': True}
-        )
+        compiled_result = qb.QueryBuilder.get_compiled_command(result)
 
         self.assertEqual(type(result), sqlalchemy.sql.elements.BooleanClauseList)
         self.assertEqual(
@@ -108,8 +101,47 @@ class BuildClauseTestCase(unittest.TestCase):
 
 
 class BuildPkClause(unittest.TestCase):
-    # TODO: implement test case
-    pass
+    def test_happy_flow(self):
+        """ Test succesful flow. """
+
+        table = mock.MagicMock()  # type: sqlalchemy.Table
+        table.primary_key.columns = [
+            sqlalchemy.Column('pk_part_1'),
+            sqlalchemy.Column('pk_part_2'),
+            sqlalchemy.Column('pk_part_3')
+        ]
+
+        result = qb.QueryBuilder.build_pk_clause(
+            table,
+            pk_part_1=11,
+            pk_part_2=12,
+            pk_part_3='13'
+        )
+        compiled_result = qb.QueryBuilder.get_compiled_command(result)
+
+        self.assertEqual(type(result), sqlalchemy.sql.elements.BooleanClauseList)
+        self.assertEqual(
+            str(compiled_result),
+            "pk_part_1 = 11 AND pk_part_2 = 12 AND pk_part_3 = '13'"
+        )
+
+    def test_partial_key_provided(self):
+        """ Test if exception is raised when some pks are not received. """
+
+        table = mock.MagicMock()  # type: sqlalchemy.Table
+        table.primary_key.columns = [
+            sqlalchemy.Column('pk_part_1'),
+            sqlalchemy.Column('pk_part_2'),
+            sqlalchemy.Column('pk_part_3'),
+            sqlalchemy.Column('pk_part_4')
+        ]
+
+        with self.assertRaises(db_exceptions.PartialPrimaryKeyException):
+            qb.QueryBuilder.build_pk_clause(
+                table,
+                pk_part_1=11,
+                pk_part_3='13'
+            )
 
 
 class ListMapperTestCase(unittest.TestCase):

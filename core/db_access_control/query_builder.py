@@ -66,10 +66,11 @@ class QueryBuilder(object):
         :return: the built clause
         """
 
-        expected = len(table.primary_key.columns)
-        received = len(kwargs)
-        if expected != received:
-            raise PartialPrimaryKeyException(received=received, expected=expected)
+        # get columns which were not specified in kwargs
+        missing_keys = [column.name for column in table.primary_key.columns if column.name not in kwargs]
+
+        if len(missing_keys) != 0:
+            raise PartialPrimaryKeyException(missing_keys=missing_keys)
 
         # join the conditions for the pk using AND operator
         return cls.build_clause(sqlalchemy.and_, table.primary_key.columns, **kwargs)
