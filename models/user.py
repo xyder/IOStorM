@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Text
-from sqlalchemy import text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 
 from core.db_access_control import DBEntity
@@ -11,13 +10,13 @@ from models import Base
 class User(DBEntity, Base):
     __tablename__ = 'users'
 
-    uid = Column('uid', UUID, server_default=text('extensions.uuid_generate_v4()'), primary_key=True)
+    uid = Column(Integer, primary_key=True)
 
-    user_name = Column('user_name', Text, unique=True, nullable=False)
-    first_name = Column('first_name', Text)
-    last_name = Column('last_name', Text)
+    user_name = Column(Text, unique=True, nullable=False)
+    first_name = Column(Text)
+    last_name = Column(Text)
 
-    key_hash = Column('key_hash', Text)
+    key_hash = Column(Text)
     settings = relationship('UserSettings', cascade='all, delete-orphan', backref='user')
 
     @staticmethod

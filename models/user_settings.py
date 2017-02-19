@@ -7,9 +7,9 @@ from models import Base
 class UserSettings(Base):
     __tablename__ = 'user_settings'
 
-    uid = Column('uid', Integer, primary_key=True, unique=True, nullable=False)
-    user_id = Column('user_id', UUID, ForeignKey('users.uid', ondelete='CASCADE'), nullable=False)
+    uid = Column(Integer, primary_key=True)
+    user_id = Column(ForeignKey('users.uid', ondelete='CASCADE'), nullable=False)
 
-    key = Column('key', Text)
-    value = Column('value', Text)
-    value_type = Column('value_type', Text)
+    key = Column(Text)
+    value = Column(Text)
+    value_type = Column(Text)

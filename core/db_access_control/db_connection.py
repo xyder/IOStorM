@@ -6,6 +6,7 @@ from tornado import concurrent, gen
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
 
+from core.db_access_control import sqla_utils
 from core.db_access_control.db_exceptions import exception_wrapper
 from core.db_access_control.query_builder import QueryBuilder
 from core.libs.config_controller import get_config
@@ -187,6 +188,7 @@ class DBConnection(object):
 
         # compile the command if necessary
         if not isinstance(command, str):
+            command.bind = sqla_utils.SQLAUtils.get_engine()
             command = QueryBuilder.get_compiled_command(command)
 
         if db_config.debug_sql:
