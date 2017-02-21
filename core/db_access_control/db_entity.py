@@ -5,7 +5,7 @@ from tornado import concurrent
 
 from core.db_access_control.db_connection import DBConnection
 from core.db_access_control.db_exceptions import IncorrectResultSizeException, SaveEntityFailedException
-from core.db_access_control.query_builder import QueryBuilder
+from core.db_access_control.ddl_utils.query_builder import QueryBuilder
 
 
 class DBEntity(object):

@@ -8,7 +8,7 @@ from tornado.ioloop import IOLoop
 
 from core.db_access_control import sqla_utils
 from core.db_access_control.db_exceptions import exception_wrapper
-from core.db_access_control.query_builder import QueryBuilder
+from core.db_access_control.ddl_utils.query_builder import QueryBuilder
 from core.libs.config_controller import get_config
 from core.libs.exceptions import MissingArgsException
 

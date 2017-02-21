@@ -27,7 +27,7 @@ def load_config(config_file_path):
     return config_dict
 
 
-def reccursive_formatter(val, config_dict, is_path=False):
+def recursive_formatter(val, config_dict, is_path=False):
     """ Recursively formats the strings and normalizes paths.
 
     :param val: current value to process
@@ -50,10 +50,10 @@ def reccursive_formatter(val, config_dict, is_path=False):
         return val
 
     if type(val) is list:
-        return [reccursive_formatter(x, config_dict, is_path) for x in val]
+        return [recursive_formatter(x, config_dict, is_path) for x in val]
 
     if type(val) is dict:
-        return {k: reccursive_formatter(v, config_dict, 'path' in k) for k, v in val.items()}
+        return {k: recursive_formatter(v, config_dict, 'path' in k) for k, v in val.items()}
 
     return val
 
@@ -71,7 +71,7 @@ class BaseEntity:
         config_dict = config_dict or {}
         for k, v in attributes.items():
             if hasattr(self, k):
-                setattr(self, k, reccursive_formatter(v, config_dict, 'path' in k))
+                setattr(self, k, recursive_formatter(v, config_dict, 'path' in k))
             else:
                 raise AttributeError('Object has no attribute {}'.format(k))
 

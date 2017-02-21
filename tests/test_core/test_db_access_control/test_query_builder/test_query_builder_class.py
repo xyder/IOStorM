@@ -5,8 +5,8 @@ import sqlalchemy
 import sqlalchemy.dialects
 import sqlalchemy.sql.elements
 
-import core.db_access_control.query_builder as qb
 import core.db_access_control.db_exceptions as db_exceptions
+import core.db_access_control.ddl_utils.query_builder as qb
 
 
 class ColumnsToDictTestCase(unittest.TestCase):
