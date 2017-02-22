@@ -7,6 +7,57 @@ from core.db_access_control.db_connection import DBConnection
 from core.libs.config_controller import get_config
 
 
+def create_schema(schema='', check_first=True, async=True):
+    """ Creates a schema if it does not already exist.
+
+    :type schema: str
+    :param schema: the name of the schema to be created
+
+    :type check_first: bool
+    :param check_first: if True, it will check first if the schema already exists
+
+    :type async: bool
+    :param async: if True, it will run this function asynchronously
+
+    :return: a Future if async was True, or the result of the cursor.execute function
+    """
+
+    schema = schema or get_config().database.schema
+
+    command = ddl.CreateSchema(schema)
+    if check_first:
+        command = command.if_not_exists()
+
+    return DBConnection.execute_command(command, async=async)
+
+
+def drop_schema(schema, cascade=False, check_first=True, async=True):
+    """ Drops a schema if it exists.
+
+    :type schema: str
+    :param schema: the name of the schema to be dropped.
+
+    :type cascade: bool
+    :param cascade: if true it will also drop the objects contained in the specified schema
+
+    :type check_first: bool
+    :param check_first: if True, it will check if the schema does not already exist
+
+    :type async: bool
+    :param async: if True, it will run this function asynchronously
+
+    :return: a Future if async was True, or the result of the cursor.execute function
+    """
+
+    schema = schema or get_config().database.schema
+
+    command = ddl.DropSchema(schema, cascade=cascade)
+    if check_first:
+        command = command.if_exists()
+
+    return DBConnection.execute_command(command, async=async)
+
+
 class DBController(object):
 
     _exception_wrapper = staticmethod(DBConnection.execute_command_wrapper)

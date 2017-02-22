@@ -80,7 +80,7 @@ class DBEntity(object):
         if condition is not None:
             command = command.where(condition)
 
-        DBConnection.execute_command(command=command, async=async)
+        return DBConnection.execute_command(command=command, async=async)
 
     def get_all_fields(self):
         """ Retrieves a dict of all column names and their values.
@@ -229,7 +229,7 @@ class DBEntity(object):
         if condition is not None:
             command = command.where(condition)
 
-        DBConnection.execute_command(command=command, async=async)
+        return DBConnection.execute_command(command=command, async=async)
 
     def __repr__(self):
         """ Returns the representation of this instance. """
