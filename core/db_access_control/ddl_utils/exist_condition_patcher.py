@@ -30,25 +30,17 @@ class ConditionVariants(Enum):
     if_not_exists = 'IF NOT EXISTS'
     if_exists = 'IF EXISTS'
 
-    @property
-    def func_value(self):
-        """ Retrieves a function name from the instance value. Ex:
-            'IF NOT EXISTS' --> 'if_not_exists'
-
-        :rtype: str
-        :return: the built function name
-        """
-
-        return self.value.lower().replace(' ', '_')
-
 
 class ExistConditionPatcher(object):
     @staticmethod
-    def set_build_condition(self):
+    def set_build_condition(self, value=True):
         """ Sets the build condition to True which will enable the patcher to augment
         the DDL statement.
 
         :param self: the DDL statement instance
+
+        :type value: bool
+        :param value: if True, on compilation the patcher will augment the output
 
         :return: a DDL statement with the build condition set to true. This is a
         shallow copy that will enable chained calls such as:
@@ -56,13 +48,13 @@ class ExistConditionPatcher(object):
         """
 
         augmented_self = copy(self)
-        augmented_self._build_condition = True
+        augmented_self._build_condition = value
         return augmented_self
 
     def append_condition_setter(self):
         """ Appends a setter for the build condition boolean to the element. """
 
-        setattr(self.element, self.variant.func_value, self.set_build_condition)
+        setattr(self.element, 'check_first', self.set_build_condition)
 
     def inject_condition(self, command):
         """ Injects the condition in the given command.

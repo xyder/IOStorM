@@ -8,7 +8,7 @@ from core.libs.config_controller import get_config
 
 
 def create_schema(schema='', check_first=True, async=True):
-    """ Creates a schema if it does not already exist.
+    """ Creates a schema.
 
     :type schema: str
     :param schema: the name of the schema to be created
@@ -23,16 +23,13 @@ def create_schema(schema='', check_first=True, async=True):
     """
 
     schema = schema or get_config().database.schema
-
-    command = ddl.CreateSchema(schema)
-    if check_first:
-        command = command.if_not_exists()
+    command = ddl.CreateSchema(schema).check_first(check_first)
 
     return DBConnection.execute_command(command, async=async)
 
 
 def drop_schema(schema, cascade=False, check_first=True, async=True):
-    """ Drops a schema if it exists.
+    """ Drops a schema.
 
     :type schema: str
     :param schema: the name of the schema to be dropped.
@@ -50,10 +47,43 @@ def drop_schema(schema, cascade=False, check_first=True, async=True):
     """
 
     schema = schema or get_config().database.schema
+    command = ddl.DropSchema(schema, cascade=cascade).check_first(check_first)
 
-    command = ddl.DropSchema(schema, cascade=cascade)
-    if check_first:
-        command = command.if_exists()
+    return DBConnection.execute_command(command, async=async)
+
+
+def create_table(table, check_first=True, async=True):
+    """ Creates a table.
+
+    :type table: sqlalchemy.Table
+    :param table: a SQLAlchemy Table specification used in the table creation
+
+    :type check_first: bool
+    :param check_first: if True, it will check if the table already exists
+
+    :type async: bool
+    :param async: if True, it will run the function asynchronously
+    """
+
+    command = ddl.CreateTable(table).check_first(check_first)
+
+    return DBConnection.execute_command(command, async=async)
+
+
+def drop_table(table, check_first=True, async=True):
+    """ Drops a table.
+
+    :type table: sqlalchemy.Table
+    :param table: a SQLAlchemy Table specification used in the table deletion
+
+    :type check_first: bool
+    :param check_first: if True, it will check if the table actually exysts
+
+    :type async: bool
+    :param async: if True, it will run the function asynchronously
+    """
+
+    command = ddl.DropTable(table).check_first(check_first)
 
     return DBConnection.execute_command(command, async=async)
 
