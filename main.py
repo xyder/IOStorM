@@ -5,7 +5,7 @@ from tornado import ioloop, httpserver
 from tornado.log import enable_pretty_logging, LogFormatter
 
 from core.application import Application
-from core.db_access_control import DBController
+from core.db_access_control import db_controller
 from core.libs.config_controller import get_config
 
 
@@ -64,7 +64,8 @@ def main():
     config = get_config()
     set_logger(config)
 
-    DBController.setup_database()
+    db_controller.setup_database_sync()
+
     create_server(config).listen(port=config.server.port, address=config.server.host)
 
     logging.info('Starting server: {}'.format(config.server.name))

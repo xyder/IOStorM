@@ -2,16 +2,17 @@ import logging
 
 import momoko
 from psycopg2 import ProgrammingError
-from tornado import concurrent, gen
+from tornado import gen
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
 
+from core.async_controller import run_sync
 from core.db_access_control import sqla_utils
 from core.db_access_control.db_exceptions import exception_wrapper
 from core.db_access_control.ddl_utils.exist_condition_patcher import enable_patches
 from core.db_access_control.ddl_utils.query_builder import QueryBuilder
 from core.libs.config_controller import get_config
-from core.libs.exceptions import MissingArgsException
+
 
 # enable conditional SQL statements
 enable_patches()
@@ -48,36 +49,6 @@ def _get_pool(io_loop=None):
 class DBConnection(object):
 
     get_pool = staticmethod(_get_pool)
-
-    @staticmethod
-    def get_sync_result(func=None, future=None, *args, **kwargs):
-        """ Return the results from an async function or a future, synchronously.
-
-        :type func: collections.abc.Callable
-        :param func: the function to be called
-
-        :type future: concurrent.Future
-        :param future: a future which, if specified, will be used instead of `func`
-            and all other arguments will be ignored
-
-        :type args: list
-        :param args: the arguments to be passed to the function
-
-        :type kwargs: dict
-        :param kwargs: the keyword arguments to be passed to the function
-
-        :return: the result of the function call
-        """
-
-        if not func and not future:
-            raise MissingArgsException('Callable or Future')
-
-        ioloop = IOLoop.instance()
-        future = future or func(*args, **kwargs)  # type: concurrent.Future
-        ioloop.add_future(future, lambda _: ioloop.stop())
-        ioloop.start()
-
-        return future.result()
 
     @classmethod
     @gen.coroutine
@@ -154,7 +125,7 @@ class DBConnection(object):
                 parser_kwargs=parser_kwargs
             )
         else:
-            return cls.get_sync_result(
+            run_sync(
                 func=cls.execute_command_async,
                 command=command,
                 io_loop=io_loop,

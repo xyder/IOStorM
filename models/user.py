@@ -2,7 +2,7 @@ from sqlalchemy import Column, Text
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 
-from core.db_access_control import DBEntity
+from core.db_access_control.db_entity import DBEntity
 from core.libs.utils import get_func_args
 from models import Base
 

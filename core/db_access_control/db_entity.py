@@ -12,8 +12,6 @@ class DBEntity(object):
     __tablename__ = ''
     __table__ = None  # type: sqlalchemy.Table
 
-    get_sync_result = staticmethod(DBConnection.get_sync_result)
-
     def __init__(self, *args, **kwargs):
         del args  # ignore the args
 
