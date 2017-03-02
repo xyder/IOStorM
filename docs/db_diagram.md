@@ -2,12 +2,12 @@
 
 ---
 
-### tag
+### tag <a name="tag-uid" />
 ###### Contains a set of hierarchies of tags represented by materialized paths.
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier <a name="tag-uid" />
+uid | int | identifier
 user_id | fk | [user.uid](#user-uid)
 path | ltree | path to the tag itself containing the tag label. auto-generated on creation
 position | int | position under the parent. updates on move/insert etc
@@ -16,12 +16,12 @@ description | str | description of the tag
 
 ---
 
-### bookmark
+### bookmark <a name="bookmark-uid" />
 ###### Contains information about bookmarks.
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier <a name="bookmark-uid" />
+uid | int | identifier
 place_id | fk | [places.uid](#place-uid)
 user_id | fk | [user.uid](#user-uid)
 title | str | title of the bookmark
@@ -29,12 +29,12 @@ description | str | description of the bookmark
 
 ---
 
-### bookmark_property
+### bookmark_property <a name="bookmark_property-uid" />
 ###### Properties that a bookmark might have.
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier <a name="bookmark_property-uid" />
+uid | int | identifier
 bookmar_id | fk | [bookmark.uid](#bookmark-uid)
 key | str | ex: rating,
 value | str
@@ -54,12 +54,12 @@ position | int | position under parent. updates on move/insert etc
 
 ---
 
-### tag_list_definition
+### tag_list_definition <a name="tag_list_definition-uid" />
 ###### Contains the definitons of tag lists.
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier <a name="tag_list_definition-uid" />
+uid | int | identifier
 name | str | name of the list
 user_id | fk | [user.uid](#user-uid)
 
@@ -76,35 +76,35 @@ tag_list_id | fk | [tag_list_definition.uid](#tag_list_definition-uid) - id of t
 
 ---
 
-### favicon
+### favicon <a name="favicon-uid" />
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier <a name="favicon-uid" />
+uid | int | identifier
 data | bytes | contains the favicon data
 mime_type |
 expiration |  | date when the favicon should be refreshed
 
 ---
 
-### preview
+### preview <a name="preview-uid" />
 ###### Contains filepaths to previews of web pages.
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier - previews will be stored as: preview_folder/<uid>.ext <a name="preview-uid" />
+uid | int | identifier - previews will be stored as: preview_folder/<uid>.ext
 user_id | fk | [user.uid](#user-uid)
 place_id | fk | [place.uid](#place-uid)
 expiration | timestamp | date when the preview should be refreshed
 
 ---
 
-### place 
+### place <a name="place-uid" />
 ###### Min store for URLs.
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier <a name="place-uid" />
+uid | int | identifier
 scheme | str | ex: `http`/`https`/`ftp` .. default is `http` unless alt_url is specified
 authority | str | ex: `user:pass@www.example.com`
 path | str | ex: `subpath1/subpath2/file.html`
@@ -115,11 +115,11 @@ favicon_id | fk | [favicon.uid](#favicon-uid)
 
 ---
 
-### user
+### user <a name="user-uid" />
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier <a name="user-uid" />
+uid | int | identifier
 user_name | str | login name
 first_name | str |
 last_name | str |
@@ -127,11 +127,11 @@ key_hash | bytes | hashed password for authentication
 
 ---
 
-### user_property
+### user_property <a name="user_property-uid" />
 
 Column | Type | Description
 --- | :---: | ---
-uid | int | identifier <a name="user_property-uid" />
+uid | int | identifier
 user_id | fk | [user.uid](#user-uid)
 key | str |
 value | str |

@@ -125,7 +125,7 @@ class DBConnection(object):
                 parser_kwargs=parser_kwargs
             )
         else:
-            run_sync(
+            return run_sync(
                 func=cls.execute_command_async,
                 command=command,
                 io_loop=io_loop,

@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Text
-from sqlalchemy import Integer
+from sqlalchemy import Column, Text, Integer, Binary
 from sqlalchemy.orm import relationship
 
 from core.db_access_control.db_entity import DBEntity
@@ -8,7 +7,7 @@ from models import Base
 
 
 class User(DBEntity, Base):
-    __tablename__ = 'users'
+    __tablename__ = 'user'
 
     uid = Column(Integer, primary_key=True)
 
@@ -16,13 +15,13 @@ class User(DBEntity, Base):
     first_name = Column(Text)
     last_name = Column(Text)
 
-    key_hash = Column(Text)
-    settings = relationship('UserSettings', cascade='all, delete-orphan', backref='user')
+    key_hash = Column(Binary)
+    settings = relationship('UserProperty', cascade='all, delete-orphan', backref='user')
 
     @staticmethod
     def get_hash(key):
         # TODO: implement this
-        return '<hash generator is not implemented yet>'
+        return b'<hash generator is not implemented yet>'
 
     def __init__(self, user_name, uid=None, key=None, first_name=None, last_name=None, key_hash=None):
         # fetch all arguments for this function

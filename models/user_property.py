@@ -4,11 +4,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from models import Base
 
 
-class UserSettings(Base):
-    __tablename__ = 'user_settings'
+class UserProperty(Base):
+    __tablename__ = 'user_property'
 
     uid = Column(Integer, primary_key=True)
-    user_id = Column(ForeignKey('users.uid', ondelete='CASCADE'), nullable=False)
+    user_id = Column(ForeignKey('user.uid', ondelete='CASCADE'), nullable=False)
 
     key = Column(Text)
     value = Column(Text)

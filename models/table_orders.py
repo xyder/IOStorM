@@ -1,12 +1,12 @@
 from models.user import User
-from models.user_settings import UserSettings
+from models.user_property import UserProperty
 
 create_order = (
     User.__table__,
-    UserSettings.__table__
+    UserProperty.__table__
 )
 
 drop_order = (
-    UserSettings.__table__,
+    UserProperty.__table__,
     User.__table__
 )
