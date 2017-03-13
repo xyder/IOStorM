@@ -1,0 +1,11 @@
+# db utils
+momoko
+psycopg2
+SQLAlchemy
+SQLAlchemy-Utils
+
+pyOpenSSL
+PyYAML
+
+tornado
+click

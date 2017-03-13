@@ -1,0 +1,6 @@
+# the requirements file for the outer python interpreter
+# this contains all necessary packages to be able to run the manage.py script
+
+virtualenvwrapper
+pip-tools
+click

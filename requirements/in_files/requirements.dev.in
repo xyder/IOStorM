@@ -1,0 +1,11 @@
+# for diagnostics
+psutil
+pympler
+
+# for development, build, deploy
+ipython
+pip-tools
+
+
+# for testing
+mock
