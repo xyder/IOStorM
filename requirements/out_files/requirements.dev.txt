@@ -27,13 +27,13 @@ psycopg2==2.7
 pycparser==2.17           # via cffi
 pygments==2.2.0           # via ipython
 pympler==0.4.3
-pyOpenSSL==16.2.0
+pyopenssl==16.2.0
 pyparsing==2.2.0          # via packaging
-PyYAML==3.12
+pyyaml==3.12
 simplegeneric==0.8.1      # via ipython
 six==1.10.0               # via cryptography, mock, packaging, pip-tools, prompt-toolkit, pyopenssl, setuptools, sqlalchemy-utils, traitlets
-SQLAlchemy-Utils==0.32.12
-SQLAlchemy==1.1.6         # via sqlalchemy-utils
+sqlalchemy-utils==0.32.12
+sqlalchemy==1.1.6
 tornado==4.4.2
 traitlets==4.3.2          # via ipython
 wcwidth==0.1.7            # via prompt-toolkit
