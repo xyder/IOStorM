@@ -1,4 +1,4 @@
-from tornado import concurrent
+from tornado import concurrent  # noqa: F401 -- used for typing
 from tornado import gen
 from tornado.ioloop import IOLoop
 

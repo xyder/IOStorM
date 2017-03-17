@@ -2,7 +2,9 @@ import os
 
 
 class Requirements(object):
-    """ Defines a Requirements object that holds in/out paths for generation of requirements files. """
+    """ Defines a Requirements object that holds in/out paths for generation
+    of requirements files.
+    """
 
     @property
     def in_files(self):
@@ -32,30 +34,31 @@ class Requirements(object):
         self._in_files = kwargs.get('in_files', [])
 
     def get_compile_command(self, in_files=(), out_file=''):
-        """ Returns the compiled command for pip-compile. If no files are provided, the instance files will be used.
+        """ Returns the compiled command for pip-compile. If no files are provided, the instance
+        files will be used.
 
         :type in_files: Iterable
         :param in_files: a list of paths that represent the input files for the pip-compile command
 
         :type out_file: str
-        :param out_file: a path representing the file that the pip-compile command will use as destination
+        :param out_file: a path representing the file that the pip-compile command will use as
+            destination
         """
 
-        return 'pip-compile --output-file {out_file} {in_files}'.format(
-            out_file=out_file or self.out_file,
-            in_files=' '.join(in_files or self.in_files)
-        )
+        return (
+            f'pip-compile --output-file '
+            f'{out_file or self.out_file} '
+            f'{" ".join(in_files or self.in_files)}')
 
     def get_sync_command(self, reqs_file=''):
-        """ Returns the compiled command for pip-sync. If no requirements file is provided, the out_file will be used.
+        """ Returns the compiled command for pip-sync. If no requirements file is provided, the
+        out_file will be used.
 
         :type reqs_file: str
         :param reqs_file: the requirements file
         """
 
-        return 'pip-sync {reqs_file}'.format(
-            reqs_file=reqs_file or self.out_file
-        )
+        return f'pip-sync {reqs_file or self.out_file}'
 
     def check_missing_out_file(self):
         """ Checks if the out file is missing. This should be relevant only after creating it.
