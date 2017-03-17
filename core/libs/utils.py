@@ -14,6 +14,13 @@ def to_string_hex(data):
 
 def get_parent_directory(path, levels_count=1):
     """ Retrieves the directory path up to `levels_count` levels up.
+    Examples:
+        >>> get_parent_directory('/test/dir/level1/level2/level3', levels_count=3)
+        '/test/dir'
+        >>> get_parent_directory('/l1/l2/l3', levels_count=5)
+        '/'
+        >>> get_parent_directory('/l1/l2/l3')
+        '/l1/l2'
 
     :param str path: the path to be processed
     :param int levels_count: the number of levels to go

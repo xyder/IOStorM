@@ -9,8 +9,6 @@ import click
 from build_manager import Requirements
 from build_manager.tools import run_command
 
-# TODO: add setup.py and entry points
-# TODO: add click-shell support
 
 # CONSTANTS
 REQS_DIR = 'requirements'
@@ -48,7 +46,7 @@ def build_requirements(key):
     # check that all files exist
     missing_files = reqs_obj.get_missing_in_files()
     for file in missing_files:
-        click.echo('Error: File "{}" does not exist.'.format(file), err=True)
+        click.echo(f'Error: File "{file}" does not exist.', err=True)
 
     if missing_files:
         return False
@@ -58,9 +56,10 @@ def build_requirements(key):
 
     # check for successful execution
     if result.returncode != 0:
-        click.echo('Error: {}'.format(result.stderr), err=True)
+        click.echo(f'Error: {result.stderr}', err=True)
         return False
 
+    click.echo(f'Build requirements for "{key}" environment.')
     return True
 
 
@@ -80,8 +79,8 @@ def sync_venv(key, print_output=True):
     reqs_obj = REQS[key]
 
     # check that out file exists
-    if reqs_obj.check_missing_out_file():
-        click.echo('Error: File "{}" does not exist.'.format(reqs_obj.out_file), err=True)
+    if not reqs_obj.check_missing_out_file():
+        click.echo(f'Error: File "{reqs_obj.out_file}" does not exist.', err=True)
         return False
 
     # execute the command
@@ -89,7 +88,7 @@ def sync_venv(key, print_output=True):
 
     # check for successful execution
     if result.returncode != 0:
-        click.echo('Error: {}'.format(result.stderr), err=True)
+        click.echo(f'Error: {result.stderr}', err=True)
         return False
 
     # print the output if needed
@@ -108,9 +107,9 @@ def cli():
 @cli.command()
 @click.option('--dev', 'env', flag_value='dev')
 @click.option('--live', 'env', flag_value='live')
-@click.option('--all', 'env', flag_value='all')
-@click.option('--sync', 'sync_action', is_flag=True)
-@click.option('--build', 'build_action', default=False)
+@click.option('--all', 'env', flag_value='all', default=True)
+@click.option('--sync', 'sync_action', is_flag=True, default=False)
+@click.option('--build', 'build_action', is_flag=True, default=False)
 def reqs(sync_action=False, build_action=False, env='all'):
     """ Command for managing requirements files.
 
