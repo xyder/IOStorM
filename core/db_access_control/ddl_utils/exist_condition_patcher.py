@@ -164,5 +164,7 @@ def enable_patches(statements=ELEMENTS_TO_PATCH, if_always=False):
     :param if_always: if True, the condition will always be set to true.
     """
 
-    for statement in statements:
-        create_patch(ExistConditionPatcher(statement), if_always=if_always)
+    if not getattr(enable_patches, '_patches_applied', False):
+        setattr(enable_patches, '_patches_applied', True)
+        for statement in statements:
+            create_patch(ExistConditionPatcher(statement), if_always=if_always)

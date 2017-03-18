@@ -9,13 +9,8 @@ from tornado.ioloop import IOLoop
 from core.async_controller import run_sync
 from core.db_access_control import sqla_utils
 from core.db_access_control.db_exceptions import exception_wrapper
-from core.db_access_control.ddl_utils.exist_condition_patcher import enable_patches
 from core.db_access_control.ddl_utils.query_builder import QueryBuilder
 from core.libs.config_controller import get_config
-
-
-# enable conditional SQL statements
-enable_patches()
 
 
 @gen.coroutine

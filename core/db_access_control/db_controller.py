@@ -3,8 +3,13 @@ from tornado import gen
 
 from core.async_controller import run_sync
 from core.db_access_control.db_connection import DBConnection
+from core.db_access_control.ddl_utils.exist_condition_patcher import enable_patches
 from core.libs.config_controller import get_config
 from models.table_orders import get_table_order
+
+
+# enable conditional create/delete SQL statements
+enable_patches()
 
 
 def create_schema(schema='', check_first=True, async=True):
