@@ -1,10 +1,10 @@
 from sqlalchemy import Column, ForeignKey, Integer, Text
-from sqlalchemy.dialects.postgresql import UUID
 
+from core.db_access_control.db_entity import DBEntity
 from models import Base
 
 
-class UserProperty(Base):
+class UserProperty(DBEntity, Base):
     __tablename__ = 'user_property'
 
     uid = Column(Integer, primary_key=True)

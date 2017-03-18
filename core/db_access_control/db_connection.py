@@ -69,8 +69,10 @@ class DBConnection(object):
 
     @classmethod
     @gen.coroutine
-    def execute_command_wrapper(cls, exception_type=ProgrammingError, message_validator=lambda s: False, **kwargs):
-        """ Wraps a SQL query execution and consumes an exception which matches the type and condition specified.
+    def execute_command_wrapper(
+            cls, exception_type=ProgrammingError, message_validator=lambda s: False, **kwargs):
+        """ Wraps a SQL query execution and consumes an exception which matches the type and
+        condition specified.
 
         :param exception_type: the type of the exception to be consumed
 
@@ -94,8 +96,8 @@ class DBConnection(object):
 
     @classmethod
     def execute_command(
-            cls, command, io_loop=None, row_parser=QueryBuilder.list_mapper, parser_kwargs=None, async=True
-    ):
+            cls, command, io_loop=None, row_parser=QueryBuilder.list_mapper,
+            parser_kwargs=None, async=True):
         """ Execute an SQL command.
 
         :param command: the SQL command string or an SQLAlchemy object that is compilable
@@ -104,8 +106,8 @@ class DBConnection(object):
         :param io_loop: the IO Loop to which the coroutines will be attached
 
         :type row_parser: collections.abc.Callable
-        :param row_parser: a function that can receive the following args: values, columns, converter
-            (see `list_mapper` for an example)
+        :param row_parser: a function that can receive the following args:
+            values, columns, converter (see `list_mapper` for an example)
 
         :type parser_kwargs: dict
         :param parser_kwargs: keyword arguments that will be passed to `row_parser` for each item
@@ -135,7 +137,8 @@ class DBConnection(object):
 
     @classmethod
     @gen.coroutine
-    def execute_command_async(cls, command, io_loop=None, row_parser=QueryBuilder.list_mapper, parser_kwargs=None):
+    def execute_command_async(
+            cls, command, io_loop=None, row_parser=QueryBuilder.list_mapper, parser_kwargs=None):
         """ Executes a database command asynchronously.
 
         :param command: the SQL command string or an SQLAlchemy object that is compilable
@@ -144,8 +147,8 @@ class DBConnection(object):
         :param io_loop: the IO Loop to which the coroutines will be attached
 
         :type row_parser: collections.abc.Callable
-        :param row_parser: a function that can receive the following args: values, columns, converter
-            (see `list_mapper` for an example)
+        :param row_parser: a function that can receive the following args:
+            values, columns, converter (see `list_mapper` for an example)
 
         :type parser_kwargs: dict
         :param parser_kwargs: kwargs that will be passed to `row_parser` for each item
@@ -190,7 +193,8 @@ class DBConnection(object):
 
                 # if the row_parser returned a Future object, yield it
                 if isinstance(ret_value, Future):
-                    # warning: using coroutines for small operations on each row greatly increases execution time
+                    # warning: using coroutines for small operations on each row
+                    # greatly increases execution time
                     ret_value = yield ret_value
 
                 # don't store if no value was returned

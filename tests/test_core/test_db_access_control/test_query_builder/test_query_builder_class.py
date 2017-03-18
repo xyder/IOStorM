@@ -30,17 +30,18 @@ class ColumnsToDictTestCase(unittest.TestCase):
         result = qb.QueryBuilder.columns_to_dict(self.test_object, self.test_columns)
         self.assertDictEqual(result, {
             'test_attr_1': 'test_val_1',
-            'test_attr_2': 'test_val_2'
+            'test_attr_2': 'test_val_2',
+            'test_attr_3': '',
         })
 
-    def test_with_no_filtering(self):
-        """ Test successful flow with filtering disabled. """
+    def test_with_filtering(self):
+        """ Test successful flow with filtering enabled (disabled by default). """
 
-        result = qb.QueryBuilder.columns_to_dict(self.test_object, self.test_columns, filtered=False)
+        result = qb.QueryBuilder.columns_to_dict(
+            self.test_object, self.test_columns, filtered=True)
         self.assertDictEqual(result, {
             'test_attr_1': 'test_val_1',
             'test_attr_2': 'test_val_2',
-            'test_attr_3': '',
         })
 
     def test_non_existent_column(self):
@@ -50,7 +51,8 @@ class ColumnsToDictTestCase(unittest.TestCase):
         self.test_columns.append(('test_attr_4', None))
 
         # run test
-        self.assertRaises(AttributeError, qb.QueryBuilder.columns_to_dict, self.test_object, self.test_columns)
+        self.assertRaises(
+            AttributeError, qb.QueryBuilder.columns_to_dict, self.test_object, self.test_columns)
 
 
 class BuildClauseTestCase(unittest.TestCase):

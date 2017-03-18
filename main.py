@@ -37,7 +37,8 @@ def create_server(config, enable_client_validation=True):
     """ Creates a HTTPS Tornado Server.
 
     :param config: the application config
-    :param enable_client_validation: if set to True, client certificates will be required for https connections
+    :param enable_client_validation: if set to True, client certificates will be required
+        for https connections
     """
 
     if enable_client_validation:

@@ -14,7 +14,10 @@ class IncorrectResultSizeException(Exception):
         :param expected: the expected size of the result
         """
 
-        self.args = ('Result set does not contain exactly {} result(s). Received {} items.'.format(expected, received),)
+        self.args = (
+            'Result set does not contain exactly {} result(s). Received {} items.'.format(
+                expected, received),
+        )
         super(IncorrectResultSizeException, self).__init__(*self.args)
 
 
@@ -37,15 +40,18 @@ class SaveEntityFailedException(Exception):
 
 
 @gen.coroutine
-def exception_wrapper(function, exception_type=ProgrammingError, message_validator=lambda s: False, **kwargs):
-    """ Wraps a function execution and consumes an exception which matches the type and the condition specified.
+def exception_wrapper(
+        function, exception_type=ProgrammingError, message_validator=lambda s: False, **kwargs):
+    """ Wraps a function execution and consumes an exception which matches the type
+    and the condition specified.
 
     :param function: the function to call
 
     :param exception_type: the type of the exception to be consumed
 
     :type message_validator: collections.abc.Callable
-    :param message_validator: the condition for the exception message for which the exception is ignored
+    :param message_validator: the condition for the exception message for which the exception
+        is ignored
 
     :type kwargs: dict
     :param kwargs: keyword arguments that will be passed to the function

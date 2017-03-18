@@ -16,14 +16,19 @@ class User(DBEntity, Base):
     last_name = Column(Text)
 
     key_hash = Column(Binary)
+
     settings = relationship('UserProperty', cascade='all, delete-orphan', backref='user')
+    tags = relationship('Tag', cascade='all, delete-orphan', backref='user')
 
     @staticmethod
     def get_hash(key):
         # TODO: implement this
         return b'<hash generator is not implemented yet>'
 
-    def __init__(self, user_name, uid=None, key=None, first_name=None, last_name=None, key_hash=None):
+    def __init__(
+            self, user_name=None, uid=None, key=None,
+            first_name=None, last_name=None, key_hash=None):
+
         # fetch all arguments for this function
         kwargs = get_func_args()
         kwargs.pop('self')

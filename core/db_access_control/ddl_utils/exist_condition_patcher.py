@@ -119,7 +119,9 @@ class ExistConditionPatcher(object):
         name_parts = self.split_camel_case(element_name)
         self.method = method or 'visit_{}'.format('_'.join(name_parts).lower())
         self.regex = regex or '{}'.format(' '.join(name_parts).upper())
-        self.condition = replacement or '{} {}'.format(' '.join(name_parts).upper(), self.variant.value)
+        self.condition = replacement or '{} {}'.format(
+            ' '.join(name_parts).upper(), self.variant.value
+        )
 
         self.append_condition_setter()
 

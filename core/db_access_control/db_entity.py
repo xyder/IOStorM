@@ -1,10 +1,12 @@
 from functools import partial
 
-import sqlalchemy
-from tornado import concurrent
+import sqlalchemy  # noqa F401 -- used for typing
+from tornado import concurrent  # noqa F401 -- used for typing
 
 from core.db_access_control.db_connection import DBConnection
-from core.db_access_control.db_exceptions import IncorrectResultSizeException, SaveEntityFailedException
+from core.db_access_control.db_exceptions import (
+    IncorrectResultSizeException,
+    SaveEntityFailedException, PartialPrimaryKeyException)
 from core.db_access_control.ddl_utils.query_builder import QueryBuilder
 
 
@@ -28,6 +30,24 @@ class DBEntity(object):
         self.columns = self.__table__.columns.items()
         self.pk_columns = self.__table__.primary_key.columns.items()
         self.non_pk_columns = [x for x in self.columns if x not in self.pk_columns]
+
+    def copy_fields(self, entity, all_fields=False):
+        """ Copies the fields of the given instance to the current instance
+
+        :type entity: DBEntity
+        :param entity: the instance to copy the fields from
+
+        :type all_fields: bool
+        :param all_fields: if True, it will copy all fields, otherwise will only copy non-pk fields
+        """
+
+        if all_fields:
+            fields = self.get_all_fields()
+        else:
+            fields = self.get_non_pk_fields()
+
+        for field in fields.keys():
+            setattr(self, field, getattr(entity, field, None))
 
     @classmethod
     def create(cls, returning=(), async=True, **kwargs):
@@ -60,13 +80,16 @@ class DBEntity(object):
         :param async: if True, it will perform the action asynchronously.
         """
 
-        self.delete_element(condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()), async=async)
+        self.delete_element(
+            condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()),
+            async=async)
 
     @classmethod
     def delete_element(cls, condition=None, async=True):
         """ Performs a delete with the given condition.
 
-        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :type condition:
+            sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
         :param condition: the condition on which the delete will be performed
 
         :type async: bool
@@ -80,23 +103,23 @@ class DBEntity(object):
 
         return DBConnection.execute_command(command=command, async=async)
 
-    def get_all_fields(self):
+    def get_all_fields(self, filtered=False):
         """ Retrieves a dict of all column names and their values.
 
         :rtype: dict
         :return: a dict containing the column names and their types
         """
 
-        return QueryBuilder.columns_to_dict(self, self.columns)
+        return QueryBuilder.columns_to_dict(self, self.columns, filtered=filtered)
 
-    def get_non_pk_fields(self):
+    def get_non_pk_fields(self, filtered=False):
         """ Retrieves a dict of non-primary key column names and their values.
 
         :rtype: dict
         :return: dict containing the column names and their values
         """
 
-        return QueryBuilder.columns_to_dict(self, self.non_pk_columns)
+        return QueryBuilder.columns_to_dict(self, self.non_pk_columns, filtered=filtered)
 
     def get_pk_fields(self):
         """ Retrieves a dict of primary key column names and their values.
@@ -105,13 +128,14 @@ class DBEntity(object):
         :return: dict containing the column names and their values
         """
 
-        return QueryBuilder.columns_to_dict(self, self.pk_columns)
+        return QueryBuilder.columns_to_dict(self, self.pk_columns, filtered=False)
 
     @classmethod
     def get(cls, condition=None, async=True):
         """ Retrieve a list of elements from the database using the given condition.
 
-        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :type condition:
+            sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
         :param condition: the condition applied when selecting the elements
 
         :type async: bool
@@ -132,16 +156,24 @@ class DBEntity(object):
         return DBConnection.execute_command(command=command, row_parser=row_parser, async=async)
 
     @classmethod
-    def get_first(cls, condition=None):
-        """ Retrieves sync the first element returned by a select with the specified condition, or None.
+    def get_first(cls, condition=None, async=True):
+        """ Retrieves the first element returned by a select with the specified condition,
+        or None.
 
         :rtype: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
         :param condition: the condition for the select
 
-        :return: an instance of this class
+        :type async: bool
+        :param async: if True, retrieves the result asynchronously
+
+        :return: an instance of this class or a Future object
         """
 
         result = cls.get(condition=condition, async=False)
+
+        # for async result, return the future to be handled elsewhere
+        if async:
+            return result
 
         if not result:
             return None
@@ -158,11 +190,13 @@ class DBEntity(object):
         :type kwargs: dict
         :param kwargs: the primary key fields and their values
 
-        :return: if async is True, it will return a list of objects.
-        If async is False, it will return an object, or None
+        :return: if async is True, it will return a Future.
+        If async is False, it will return a list of objects, or None
         """
 
-        result = cls.get(condition=QueryBuilder.build_pk_clause(cls.__table__, **kwargs), async=async)
+        result = cls.get(
+            condition=QueryBuilder.build_pk_clause(cls.__table__, **kwargs),
+            async=async)
 
         # return async result
         if async:
@@ -188,13 +222,27 @@ class DBEntity(object):
         """
 
         # TODO: fill in based on custom subclass `returning` list for default/generated values
-        returned = self.create(async=async, **self.get_non_pk_fields())
+        returned = self.create(async=async, **self.get_non_pk_fields(filtered=True))
         if len(returned) != 1:
-            raise SaveEntityFailedException('Invalid number of pk fields used - {}.'.format(len(returned)))
+            raise SaveEntityFailedException(
+                'Invalid number of pk fields used - {}.'.format(len(returned)))
 
         returned = returned[0]  # type: dict
         for k, v in returned.items():
             setattr(self, k, v)
+
+    def sync(self):
+        """ Synchronizes the data this instance holds with the data in the db. PK on this instance
+        must be specified.
+        """
+
+        pk = self.get_pk_fields()
+        missing_pk = {k: v for k, v in pk.items() if not v}
+
+        if len(missing_pk):
+            raise PartialPrimaryKeyException(missing_keys=missing_pk.keys())
+
+        self.copy_fields(self.get_by_pk(async=False, **pk))
 
     def update(self, async=True):
         """ Updates the database with the information from this instance.
@@ -205,14 +253,15 @@ class DBEntity(object):
 
         self.update_element(
             condition=QueryBuilder.build_pk_clause(self.__table__, **self.get_pk_fields()),
-            async=async, **self.get_non_pk_fields()
+            async=async, **self.get_non_pk_fields(filtered=True)
         )
 
     @classmethod
     def update_element(cls, condition=None, async=True, **kwargs):
         """ Performs an update with the given args and condition.
 
-        :type condition: sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
+        :type condition:
+            sqlalchemy.sql.elements.BooleanClauseList|sqlalchemy.sql.elements.BinaryExpression
         :param condition: the condition on which the update will be performed.
 
         :type async: bool

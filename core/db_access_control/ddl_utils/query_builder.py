@@ -9,8 +9,8 @@ DIALECT = postgresql.dialect()
 class QueryBuilder(object):
     """ Class that holds methods for SQL query and objects preparation. """
     @staticmethod
-    def columns_to_dict(obj, columns, filtered=True):
-        """ Retrives a dict of column names and their values.
+    def columns_to_dict(obj, columns, filtered=False):
+        """ Retrieves a dict of column names and their values.
 
         :param obj: the object from where the params are extracted.
 
@@ -67,7 +67,9 @@ class QueryBuilder(object):
         """
 
         # get columns which were not specified in kwargs
-        missing_keys = [column.name for column in table.primary_key.columns if column.name not in kwargs]
+        missing_keys = [
+            column.name for column in table.primary_key.columns
+            if column.name not in kwargs]
 
         if len(missing_keys) != 0:
             raise PartialPrimaryKeyException(missing_keys=missing_keys)
@@ -77,7 +79,8 @@ class QueryBuilder(object):
 
     @staticmethod
     def list_mapper(values, columns, converter=lambda **kwargs: kwargs):
-        """ A base row parser that maps the row values to the columns and passes them to an object constructor
+        """ A base row parser that maps the row values to the columns and passes them
+        to an object constructor
 
         :type values: list
         :param values: the row values

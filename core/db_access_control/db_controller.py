@@ -1,11 +1,10 @@
-import sqlalchemy
 from sqlalchemy.sql import ddl
 from tornado import gen
 
 from core.async_controller import run_sync
 from core.db_access_control.db_connection import DBConnection
 from core.libs.config_controller import get_config
-from models import table_orders
+from models.table_orders import get_table_order
 
 
 def create_schema(schema='', check_first=True, async=True):
@@ -135,13 +134,14 @@ def setup_database(clean=False):
     """
 
     if clean:
-        yield drop_tables(tables=table_orders.drop_order)
+        drop_order = yield get_table_order(for_drop=True)
+        yield drop_tables(tables=drop_order)
         yield drop_schema()
 
     yield create_schema()
-    yield create_tables(tables=table_orders.create_order)
+    create_order = yield get_table_order()
+    yield create_tables(tables=create_order)
 
 
 def setup_database_sync(clean=False):
     run_sync(setup_database, clean=clean)
-

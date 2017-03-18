@@ -38,6 +38,8 @@ def recursive_formatter(val, config_dict, is_path=False):
 
     if type(val) is str:
         # replace string format placeholders repeatedly until no change is detected
+        # TODO: this can be a security issue. check:
+        # http://lucumr.pocoo.org/2016/12/29/careful-with-str-format/
         while True:
             aux = val
             val = val.format(_=config_dict)
@@ -65,7 +67,8 @@ class BaseEntity:
         """ Loads the specified attributes values into the instance attributes.
 
         :param dict attributes: the attributes to be loaded
-        :param dict config_dict: the config dictionary to be used for formatting any contained strings
+        :param dict config_dict: the config dictionary to be used for formatting
+        any contained strings
         """
 
         config_dict = config_dict or {}
@@ -90,7 +93,8 @@ class BaseConfig(BaseEntity):
         """ Initializes the config object.
 
         :param list[str] key_path: list containing the path in the config_dict tree
-        :param dict config_dict: a dict containing the  configuration for this object. treated as a tree.
+        :param dict config_dict: a dict containing the  configuration for this object.
+        Treated as a tree.
         """
 
         section = config_dict
@@ -164,7 +168,8 @@ class CertificatesConfig(BaseConfig):
     def get_cert_path(self, key, ext):
         """ Builds the path to a certificate file.
 
-        :param str key: the key used to retrieve the directory path and file name from the certificates dict
+        :param str key: the key used to retrieve the directory path and file name from
+        the certificates dict
         :param str ext: the extension used as the second section of the file name
         :return: the built and normalized path
         :rtype: str

@@ -16,7 +16,8 @@ class SSLEntity:
     def __init__(self, subject_dict, default_days_valid=3652, sign_digest='sha512'):
         """ Create a SSL entity which can be used to create and manage SSL certificates.
 
-        :param dict subject_dict: a dict with values which will be used as subject for certificates.\n
+        :param dict subject_dict: a dict with values which will be used
+        as subject for certificates.\n
             possible key-values:\n
                 C               - country name\n
                 ST              - state or province name\n
