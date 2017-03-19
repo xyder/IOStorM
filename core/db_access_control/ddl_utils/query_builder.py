@@ -2,8 +2,12 @@ import sqlalchemy
 from sqlalchemy.dialects import postgresql
 
 from core.db_access_control.db_exceptions import PartialPrimaryKeyException
+from core.db_access_control.ddl_utils.exist_condition_patcher import enable_patches
 
 DIALECT = postgresql.dialect()
+
+# enable conditional create/delete SQL statements
+enable_patches()
 
 
 class QueryBuilder(object):
